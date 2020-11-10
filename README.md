@@ -92,6 +92,12 @@ Pycharm:
         
     click the icon push and push your branch to github
     
+if you don't see your branch pushed and it is your first attempt click again on push:
+
+    you'll see <your-branch-name> -> master
+    
+click on master and define what it is(origin/master) with the url of the project. Push again and then link Pycharm to Github
+    
 Terminal:
 
     git commit -m "your message to explain here"
