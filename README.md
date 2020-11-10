@@ -27,9 +27,11 @@ useful for setting up python
 
 set as interpreter for the project
 
-typical command to install packages:
+packages to install:
 
-    conda install ...
+    conda install pyserial
+    
+    conda install python-dotenv
 
 ## PyCharm
 
@@ -106,5 +108,11 @@ Terminal:
   
 Now you need to merge your branch on github. YOu go to the page of the project and click create PR of you branch to the main one.
     
+## .env
 
+Create a .env and make sure not to commit and push it
+
+This is a way to store locally variables that can be used in the project, variables that may be different for everyone
+
+    COM_PORT="\\.\COM4"
 
