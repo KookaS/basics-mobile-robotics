@@ -1,9 +1,21 @@
 import time
 from threading import Timer
+
 from src.thymio.Thymio import Thymio
 
 
 class RepeatedTimer(object):
+    """
+        Timer used to get the evolution of the state of the robot
+
+        :attribute _timer:          Timer used internally
+        :attribute interval:        Interval of time
+        :attribute function:        Callback function
+        :attribute args:            non-keyworded variable length argument list to the function
+        :attribute kwargs:          keyworded variable length of arguments to a function
+        :attribute is_running:      tells if the timer runs or not
+    """
+
     def __init__(self, interval, function, *args, **kwargs):
         self._timer = None
         self.interval = interval
@@ -16,7 +28,7 @@ class RepeatedTimer(object):
     def _run(self):
         self.is_running = False
         self.start()
-        self.function(*self.args, **self.kwargs)
+        self.function(*self.args, **self.kwargs)  # TODO: problem here with this callback
 
     def start(self):
         if not self.is_running:
@@ -43,7 +55,7 @@ class State(object):
         self.data = []
         self.thymio = thymio
 
-    def get_data(self, thymio: Thymio):
+    def __get_data(self, thymio: Thymio):
         """
         Get the data from every sensors
 
@@ -55,22 +67,20 @@ class State(object):
                           "left_speed": thymio["motor.left.speed"],
                           "right_speed": thymio["motor.right.speed"]})
 
-    def acquire_data(self, thymio: Thymio):
+    def acquire_data(self):
         """
         Fetch the robot state
-
-        :param thymio: The file location of the spreadsheet
         """
-        rt = RepeatedTimer(self.ts, self.get_data(thymio))  # it auto-starts, no need of rt.start()
+        rt = RepeatedTimer(self.ts, self.__get_data(self.thymio))  # it auto-starts, no need of rt.start()
         try:
             time.sleep(5)
-            thymio.set_var("motor.left.target", 55)
-            thymio.set_var("motor.right.target", 50)
+            self.thymio.set_var("motor.left.target", 55)
+            self.thymio.set_var("motor.right.target", 50)
             time.sleep(25)  # your long-running job goes here...
         finally:
             rt.stop()  # better in a try/finally block to make sure the program ends!
-            thymio.set_var("motor.left.target", 0)
-            thymio.set_var("motor.right.target", 0)
+            self.thymio.set_var("motor.left.target", 0)
+            self.thymio.set_var("motor.right.target", 0)
 
     def data(self):
         """
@@ -80,9 +90,9 @@ class State(object):
         """
         return self.data
 
-    def ts(self):
+    def ts(self) -> float:
         """
-        Fetch the robot state
+        Fetch the time interval
 
         :return: return the time interval
         """
