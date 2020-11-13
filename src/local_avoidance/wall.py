@@ -3,13 +3,14 @@ from src.thymio.Thymio import Thymio
 from src.displacement.movement import move
 
 
-def test_saw_wall(thymio: Thymio, wall_threshold, verbose=False):
+def test_saw_wall(thymio: Thymio, wall_threshold, verbose=False) -> bool:
     """
     Tests whether one of the proximity sensors saw a wall
 
     :param thymio:          The file location of the spreadsheet
-    :param wall_threshold: threshold starting which it is considered that the sensor saw a wall
+    :param wall_threshold:  threshold starting which it is considered that the sensor saw a wall
     :param verbose:         whether to print status messages or not
+    :return: bool           existence of wall or not
     """
 
     if any([x > wall_threshold for x in thymio['prox.horizontal'][:-2]]):
