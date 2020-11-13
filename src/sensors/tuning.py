@@ -81,7 +81,7 @@ def print_sensor_values(thymio: Thymio, sensor_id: string, print_duration=3, del
 
 class InitTuning(object):
     """
-    Tune the robot
+    Tune the robot to go in a straight line
     """
 
     def __init__(self, thymio: Thymio, ts: float = 0.1):
@@ -97,12 +97,18 @@ class InitTuning(object):
         self.ts = ts
 
     def __forward(self):
+        """
+        Make the robot go forward
+        """
         self.state = self.CONST_FORWARD_TUNE
         self.time = 0
         self.thymio.set_var("motor.left.target", 100)
         self.thymio.set_var("motor.right.target", 100)
 
     def __tune_wheels(self):
+        """
+        Tune the wheels to have a straight motion
+        """
         self.time += 1
         if self.state == self.CONST_FORWARD_TUNE:
             if self.time > (self.CONST_ONE_TURN_TUNE / self.CONST_SAMPLING_TUNE / 2):
@@ -119,6 +125,9 @@ class InitTuning(object):
                 self.thymio.set_var("motor.right.target", 99)
 
     def tune(self):
+        """
+        Launches the tuning process
+        """
         self.__forward()
         rt = RepeatedTimer(self.ts, self.__tune_wheels())
         if True:  # TODO: check the conditions on when to stop

@@ -55,23 +55,22 @@ class State(object):
         self.data = []
         self.thymio = thymio
 
-    def __get_data(self, thymio: Thymio):
+    def __get_data(self):
         """
         Get the data from every sensors
 
         :param thymio: The file location of the spreadsheet
         """
-
-        self.data.append({"ground": thymio["prox.ground.reflected"],
-                          "sensor": thymio["prox.ground.reflected"],
-                          "left_speed": thymio["motor.left.speed"],
-                          "right_speed": thymio["motor.right.speed"]})
+        self.data.append({"ground": self.thymio["prox.ground.reflected"],
+                          "sensor": self.thymio["prox.ground.reflected"],
+                          "left_speed": self.thymio["motor.left.speed"],
+                          "right_speed": self.thymio["motor.right.speed"]})
 
     def acquire_data(self):
         """
         Fetch the robot state
         """
-        rt = RepeatedTimer(self.ts, self.__get_data(self.thymio))  # it auto-starts, no need of rt.start()
+        rt = RepeatedTimer(self.ts, self.__get_data())  # it auto-starts, no need of rt.start()
         try:
             time.sleep(5)
             self.thymio.set_var("motor.left.target", 55)

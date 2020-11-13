@@ -5,6 +5,7 @@ import time
 
 from src.displacement.management import run_ann_without_memory
 from src.sensors.state import State
+from src.sensors.tuning import InitTuning
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
 
@@ -35,6 +36,7 @@ def main():
     time.sleep(3)  # To make sure the Thymio has had time to connect
     print_thymio(th)
     # run_ann_without_memory(th)
+    tuning = InitTuning(th)
     state = State(th)
     state.acquire_data()
 
