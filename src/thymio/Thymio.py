@@ -3,8 +3,10 @@
 
 import threading
 
+
 class Message:
-    """Aseba message data.
+    """
+    Aseba message data.
     """
 
     # v5
@@ -34,7 +36,7 @@ class Message:
     ID_BREAKPOINT_CLEAR = 0xa009
     ID_BREAKPOINT_CLEAR_ALL = 0xa00a
     ID_GET_VARIABLES = 0xa00b
-    ID_SET_VARIABLES =  0xa00c
+    ID_SET_VARIABLES = 0xa00c
     ID_GET_NODE_DESCRIPTION = 0xa010
     ID_LIST_NODES = 0xa011
     # v6
@@ -61,7 +63,7 @@ class Message:
         """Get a string in the payload.
         """
         len = self.payload[offset]
-        str = self.payload[offset + 1 : offset + 1 + len]
+        str = self.payload[offset + 1: offset + 1 + len]
         return str.decode('utf-8'), offset + 1 + len
 
     @staticmethod
@@ -295,7 +297,7 @@ class RemoteNode:
         """Get the value of an array variable.
         """
         offset = self.var_offset[name]
-        return self.var_data[offset : offset + self.var_size[name]]
+        return self.var_data[offset: offset + self.var_size[name]]
 
     def set_var(self, name, val, index=0):
         """Set the value of a scalar variable or an item in an array variable.
@@ -306,12 +308,12 @@ class RemoteNode:
         """Set the value of an array variable.
         """
         offset = self.var_offset[name]
-        self.var_data[offset : offset + len(val)] = val
+        self.var_data[offset: offset + len(val)] = val
 
     def set_var_data(self, offset, data):
         """Set values in the variable data array.
         """
-        self.var_data[offset : offset + len(data)] = data
+        self.var_data[offset: offset + len(data)] = data
 
 
 class Thymio:
@@ -333,11 +335,13 @@ class Thymio:
         self.output_lock = threading.Lock()
         self.refreshing_timeout = None
         self.refreshing_trigger = threading.Event()  # initially wait() blocks
+
         def do_refresh():
             while not self.terminating:
                 self.refreshing_trigger.wait(self.refreshing_timeout)
                 self.refreshing_trigger.clear()
                 self.get_variables()
+
         self.refresh_thread = threading.Thread(target=do_refresh)
         self.refresh_thread.start()
         if refreshing_rate is not None:
@@ -409,8 +413,10 @@ class Thymio:
         class NullIO(io.RawIOBase):
             def read(self, n):
                 return None
+
             def write(self, b):
                 pass
+
         return Thymio(NullIO(), node_id)
 
     def handshake(self):
@@ -502,9 +508,9 @@ class Thymio:
         """Send a SET_VARIABLES message.
         """
         payload = Message.uint16array_to_bytes([
-            self.get_target_node_id() if target_node_id is None else target_node_id,
-            chunk_offset
-        ] + chunk)
+                                                   self.get_target_node_id() if target_node_id is None else target_node_id,
+                                                   chunk_offset
+                                               ] + chunk)
         msg = Message(Message.ID_SET_VARIABLES, self.node_id, payload)
         self.send(msg)
 
@@ -560,6 +566,7 @@ class Thymio:
 
 if __name__ == "__main__":
     import time
+
     with Thymio.serial(refreshing_rate=0.1) as th:
         while True:
             try:

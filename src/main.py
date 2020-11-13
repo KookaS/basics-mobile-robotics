@@ -13,6 +13,12 @@ load_dotenv()
 
 
 def print_thymio(thymio: Thymio):
+    """
+    Print the variables of Thymio
+
+    :param thymio: The file location of the spreadsheet
+    """
+
     print('All Thymio instance attributes:')
     pprint.pprint(dir(thymio))
 

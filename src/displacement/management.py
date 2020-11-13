@@ -6,6 +6,12 @@ from src.displacement.movement import move, stop
 
 
 def run_ann_without_memory(thymio: Thymio):
+    """
+    Run the thymio with the NN architecture.
+
+    :param thymio: The file location of the spreadsheet
+    """
+
     # Weights of neuron inputs
     w_l = np.array([40, 20, -20, -20, -40, 30, -10])
     w_r = np.array([-40, -20, -20, 20, 40, -10, 30])

@@ -42,7 +42,7 @@ in the folder you want to work on:
     
 ### Libraries
 
-Anaconda is useful for setting up python, you ahve to set as interpreter for the project
+Anaconda is useful for setting up python, you have to set as interpreter for the project
 
 packages to install:
     
@@ -119,4 +119,25 @@ Create a .env and make sure not to commit and push it
 This is a way to store locally variables that can be used in the project, variables that may be different for everyone
 
     COM_PORT="\\.\COM4"
+    
+## documentation
+
+For every function make sure to document everything, reStructured Text:
+
+    def your_function(arg1: bool, arg2: string):
+        """
+        Here the description of your function. The description below should tell for each argument and/or return the type and its description.
+        If the type is already given above you don't have to write it below.
+
+        :type arg1:     bool
+        :param arg1:    arg1 is ...
+        :type arg2:     string
+        :param arg2:    arg2 is ...
+        
+        :rtype: list
+        :returns: a list of ...
+        """ 
+        
+        your code here...
+        return ...
 
