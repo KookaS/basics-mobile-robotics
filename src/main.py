@@ -32,13 +32,17 @@ def print_thymio(thymio: Thymio):
 
 
 def main():
-    th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)  # ser:device=\\.\COM4
+    th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
     print_thymio(th)
+
     # run_ann_without_memory(th)
+
     tuning = InitTuning(th)
-    state = State(th)
-    state.acquire_data()
+    tuning.tune()
+
+    # state = State(th)
+    # state.acquire_data()
 
 
 if __name__ == "__main__":
