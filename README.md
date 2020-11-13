@@ -21,18 +21,6 @@ keep standard settings
 
 if problems check: https://stackoverflow.com/questions/4492979/git-is-not-recognized-as-an-internal-or-external-command
 
-### anaconda
-
-useful for setting up python
-
-set as interpreter for the project
-
-packages to install:
-
-    conda install pyserial
-    
-    conda install python-dotenv
-
 ## PyCharm
 
 install plugin in Settings -> Plugins
@@ -51,6 +39,22 @@ in the folder you want to work on:
     git init
     
     git pull git@github.com:KookaS/basics-mobile-robotics.git
+    
+### Libraries
+
+Anaconda is useful for setting up python, you ahve to set as interpreter for the project
+
+packages to install:
+    
+    conda install ...
+    
+If you don't have Anaconda download pip3 and then to install libraries:
+
+    pip3 install ...
+    
+Here is the list of packages to install:
+
+    pyserial python-dotenv opencv-python tqdm matplotlib numpy ipywidgets
     
 ### Branches
 
