@@ -4,6 +4,8 @@ import pprint
 import time
 
 from src.displacement.management import run_ann_without_memory
+from src.sensors.state import State
+from src.sensors.tuning import InitTuning
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
 
@@ -30,10 +32,17 @@ def print_thymio(thymio: Thymio):
 
 
 def main():
-    th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)  # ser:device=\\.\COM4
+    th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
     print_thymio(th)
-    run_ann_without_memory(th)
+
+    # run_ann_without_memory(th)
+
+    tuning = InitTuning(th)
+    tuning.tune()
+
+    # state = State(th)
+    # state.acquire_data()
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ import math
 from scipy.interpolate import interp1d
 from typing import List
 from src.thymio.Thymio import Thymio
+from src.sensors.state import RepeatedTimer
 
 # Sensor measurements
 sensor_distances = np.array([i for i in range(0, 21)])
@@ -76,3 +77,58 @@ def print_sensor_values(thymio: Thymio, sensor_id: string, print_duration=3, del
     while time.time() < t_end:
         time.sleep(delta_time)
         print(thymio[sensor_id])
+
+
+class InitTuning(object):
+    """
+    Tune the robot to go in a straight line
+    """
+
+    def __init__(self, thymio: Thymio, ts: float = 0.1):
+        self.CONST_FORWARD_TUNE = 1
+        self.CONST_TURN_TUNE = 2
+        self.CONST_ONE_TURN_TUNE = 8873
+        self.CONST_SAMPLING_TUNE = 5
+        self.state = 0
+        self.time = 0
+        self.thymio = thymio
+        self.thymio.set_var("motor.left.target", 0)
+        self.thymio.set_var("motor.right.target", 0)
+        self.ts = ts
+
+    def __forward(self):
+        """
+        Make the robot go forward
+        """
+        self.state = self.CONST_FORWARD_TUNE
+        self.time = 0
+        self.thymio.set_var("motor.left.target", 100)
+        self.thymio.set_var("motor.right.target", 100)
+
+    def __tune_wheels(self):
+        """
+        Tune the wheels to have a straight motion
+        """
+        self.time += 1
+        if self.state == self.CONST_FORWARD_TUNE:
+            if self.time > (self.CONST_ONE_TURN_TUNE / self.CONST_SAMPLING_TUNE / 2):
+                self.time = 0
+                self.state = self.CONST_TURN_TUNE
+                self.thymio.set_var("motor.left.target", 100)
+                self.thymio.set_var("motor.right.target", -100)
+
+        elif self.state == self.CONST_TURN_TUNE:
+            if self.time > (self.CONST_ONE_TURN_TUNE / self.CONST_SAMPLING_TUNE / 2):
+                self.time = 0
+                self.state = self.CONST_FORWARD_TUNE
+                self.thymio.set_var("motor.left.target", 100)
+                self.thymio.set_var("motor.right.target", 99)
+
+    def tune(self):
+        """
+        Launches the tuning process
+        """
+        self.__forward()
+        rt = RepeatedTimer(self.ts, self.__tune_wheels())
+        if True:  # TODO: check the conditions on when to stop
+            rt.stop()

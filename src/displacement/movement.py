@@ -42,7 +42,7 @@ def stop(thymio: Thymio, verbose=False):
     thymio.set_var("motor.right.target", 0)
 
 
-def rotate(angle: float, coords: np.ndarray[any]) -> np.ndarray[any]:
+def rotate(angle: float, coords):
     """
     Rotates the coordinates of a matrix by the desired angle
 
