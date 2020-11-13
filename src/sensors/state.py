@@ -33,13 +33,15 @@ class State(object):
     """
     Get the data from every sensors
 
-    :parameter ts:          the time interval
-    :parameter thymio_data: ground, sensor, left_speed and right_speed at every sample
+    :attribute ts:          the time interval
+    :attribute data:        ground, sensor, left_speed and right_speed at every sample
+    :attribute thymio:      class of the robot to refer to
     """
 
-    def __init__(self, ts: float = 0.1):
+    def __init__(self, thymio: Thymio, ts: float = 0.1):
         self.ts = ts
-        self.thymio_data = []
+        self.data = []
+        self.thymio = thymio
 
     def get_data(self, thymio: Thymio):
         """
@@ -48,10 +50,10 @@ class State(object):
         :param thymio: The file location of the spreadsheet
         """
 
-        self.thymio_data.append({"ground": thymio["prox.ground.reflected"],
-                                 "sensor": thymio["prox.ground.reflected"],
-                                 "left_speed": thymio["motor.left.speed"],
-                                 "right_speed": thymio["motor.right.speed"]})
+        self.data.append({"ground": thymio["prox.ground.reflected"],
+                          "sensor": thymio["prox.ground.reflected"],
+                          "left_speed": thymio["motor.left.speed"],
+                          "right_speed": thymio["motor.right.speed"]})
 
     def acquire_data(self, thymio: Thymio):
         """
@@ -70,15 +72,15 @@ class State(object):
             thymio.set_var("motor.left.target", 0)
             thymio.set_var("motor.right.target", 0)
 
-    def get_thymio_data(self):
+    def data(self):
         """
-        Fetch the thymio_data
+        Fetch the data of thymio
 
-        :return: return the thymio_data of the time interval
+        :return: return the data of thymio of the time interval
         """
-        return self.thymio_data
+        return self.data
 
-    def get_ts(self):
+    def ts(self):
         """
         Fetch the robot state
 
