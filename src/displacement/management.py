@@ -18,7 +18,6 @@ class EventHandler:
         self.events = []
         for _ in EventEnum:
             self.events.append(threading.Event())
-        print(self.events)
         threading.Thread(target=self.global_thread).start()
         threading.Thread(target=self.local_thread).start()
         threading.Thread(target=self.stop_thread).start()
