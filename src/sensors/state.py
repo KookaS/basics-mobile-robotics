@@ -16,12 +16,12 @@ class RepeatedTimer(object):
         :attribute is_running:      tells if the timer runs or not
     """
 
-    def __init__(self, interval, function, *args, **kwargs):
+    def __init__(self, interval, function, args=None, kwargs=None):
         self._timer = None
         self.interval = interval
         self.function = function
-        self.args = args
-        self.kwargs = kwargs
+        self.args = args if args is not None else []
+        self.kwargs = kwargs if kwargs is not None else {}
         self.is_running = False
         self.start()
 

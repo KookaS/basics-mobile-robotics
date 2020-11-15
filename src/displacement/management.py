@@ -28,7 +28,6 @@ def run_ann_without_memory(thymio: Thymio):
 
     j = 0
     while True:
-        print("inside here")
         j += 1
         if thymio["button.center"] == 1 and state == 0:
             state = 1
@@ -50,7 +49,9 @@ def run_ann_without_memory(thymio: Thymio):
             print("Stopping!")
             stop(thymio)
             time.sleep(0.1)
-        elif state != 0:
+
+        """
+        if state != 0:
             # sensing and avoiding obstacles with ann
             print("inside ann")
             # Get and scale inputs
@@ -60,5 +61,4 @@ def run_ann_without_memory(thymio: Thymio):
             y[1] = np.sum(x * w_r)
             print(j, int(y[0]), int(y[1]), thymio["prox.horizontal"])
             move(thymio, l_speed=int(y[0]), r_speed=int(y[1]))
-        else:
-            print("inside other condition")
+        """

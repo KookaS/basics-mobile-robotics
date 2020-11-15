@@ -4,6 +4,7 @@ import pprint
 import time
 
 from src.displacement.management import run_ann_without_memory
+from src.displacement.movement import move, rotate
 from src.sensors.state import State
 from src.sensors.tuning import InitTuning
 from src.thymio.Thymio import Thymio
@@ -35,7 +36,9 @@ def main():
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
     print_thymio(th)
-    run_ann_without_memory(th)
+    # run_ann_without_memory(th)
+    rotate(thymio=th, angle=90.0, verbose=True)
+
     print("end of main")
     # state = State(th)
     # state.acquire_data()
