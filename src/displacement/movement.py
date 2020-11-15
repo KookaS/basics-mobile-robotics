@@ -65,5 +65,5 @@ def rotate(thymio: Thymio, angle: float, verbose: bool = False):
 
     timer = Timer(interval=turn_time, function=move, args=[thymio, 0, 0])
     move(thymio, l_speed, r_speed)
-    timer.run()
+    timer.run()  # timer calls the function at the end of the interval
     timer.cancel()  # stop the timer's action if it's still waiting

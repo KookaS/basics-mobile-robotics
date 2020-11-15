@@ -14,6 +14,8 @@ class RepeatedTimer(object):
         :attribute args:            non-keyworded variable length argument list to the function
         :attribute kwargs:          keyworded variable length of arguments to a function
         :attribute is_running:      tells if the timer runs or not
+
+        We do not use it !!! Delete at the end of project!!!
     """
 
     def __init__(self, interval, function, args=None, kwargs=None):
@@ -41,7 +43,7 @@ class RepeatedTimer(object):
         self.is_running = False
 
 
-class State(object):
+class State:
     """
     Get the data from every sensors
 
