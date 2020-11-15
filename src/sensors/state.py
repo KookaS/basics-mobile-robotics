@@ -28,7 +28,7 @@ class RepeatedTimer(object):
     def _run(self):
         self.is_running = False
         self.start()
-        self.function(*self.args, **self.kwargs)  # TODO: problem here with this callback
+        self.function(*self.args, **self.kwargs)
 
     def start(self):
         if not self.is_running:

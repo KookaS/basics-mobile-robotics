@@ -40,7 +40,7 @@ def sensor_val_to_cm_dist(val: int) -> int:
     return np.asscalar(f(val))
 
 
-def obstacles_pos_from_sensor_vals(sensor_vals: List[int]) -> np.ndarray[int]:
+def obstacles_pos_from_sensor_vals(sensor_vals):
     """
     Returns a list containing the position of the obstacles
     w.r.t the center of the Thymio robot.
@@ -85,6 +85,7 @@ class InitTuning(object):
     """
 
     def __init__(self, thymio: Thymio, ts: float = 0.1):
+        self.CONST_STOP = 0
         self.CONST_FORWARD_TUNE = 1
         self.CONST_TURN_TUNE = 2
         self.CONST_ONE_TURN_TUNE = 8873
@@ -105,30 +106,56 @@ class InitTuning(object):
         self.thymio.set_var("motor.left.target", 100)
         self.thymio.set_var("motor.right.target", 100)
 
+    def __center(self):
+        """
+        Make the robot stop
+        """
+        self.state = self.CONST_FORWARD_TUNE
+        self.time = 0
+        self.thymio.set_var("motor.left.target", 0)
+        self.thymio.set_var("motor.right.target", 0)
+
     def __tune_wheels(self):
         """
         Tune the wheels to have a straight motion
         """
+
+        # manual mode
+        if self.thymio["button.center"] == 1:
+            print("center")
+            self.__center()
+            return
+        elif self.thymio["button.forward"] == 1:
+            print("forward")
+            self.__forward()
+            return
+
         self.time += 1
+        print(self.time)
         if self.state == self.CONST_FORWARD_TUNE:
             if self.time > (self.CONST_ONE_TURN_TUNE / self.CONST_SAMPLING_TUNE / 2):
+                "turn!"
                 self.time = 0
                 self.state = self.CONST_TURN_TUNE
                 self.thymio.set_var("motor.left.target", 100)
                 self.thymio.set_var("motor.right.target", -100)
+                return
 
         elif self.state == self.CONST_TURN_TUNE:
             if self.time > (self.CONST_ONE_TURN_TUNE / self.CONST_SAMPLING_TUNE / 2):
+                "straight!"
                 self.time = 0
                 self.state = self.CONST_FORWARD_TUNE
                 self.thymio.set_var("motor.left.target", 100)
                 self.thymio.set_var("motor.right.target", 99)
+                return
 
     def tune(self):
         """
         Launches the tuning process
         """
         self.__forward()
-        rt = RepeatedTimer(self.ts, self.__tune_wheels())
-        if True:  # TODO: check the conditions on when to stop
-            rt.stop()
+        print("before timer")
+        self.ts = 1
+        rt = RepeatedTimer(self.ts, print("test"))
+        print("after timer")

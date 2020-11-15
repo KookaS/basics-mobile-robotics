@@ -2,7 +2,7 @@ import numpy as np
 import time
 
 from src.thymio.Thymio import Thymio
-from src.displacement.movement import move, stop
+from src.displacement.movement import move, stop, rotate
 
 
 def run_ann_without_memory(thymio: Thymio):
@@ -28,26 +28,37 @@ def run_ann_without_memory(thymio: Thymio):
 
     j = 0
     while True:
+        print("inside here")
         j += 1
-
         if thymio["button.center"] == 1 and state == 0:
             state = 1
-            move(thymio)
             print("moving!")
+            move(thymio)
+            time.sleep(0.1)
+        elif thymio["button.left"] == 1 and state == 0:
+            state = 1
+            print("Rotate left!")
+            rotate(thymio, -90.0)
+            time.sleep(0.1)
+        elif thymio["button.right"] == 1 and state == 0:
+            state = 1
+            print("Rotate right!")
+            rotate(thymio, 90.0)
             time.sleep(0.1)
         elif thymio["button.center"] == 1 and state == 1:
             state = 0
-            stop(thymio)
             print("Stopping!")
+            stop(thymio)
             time.sleep(0.1)
-
-        if state != 0:
+        elif state != 0:
+            # sensing and avoiding obstacles with ann
+            print("inside ann")
             # Get and scale inputs
             x = np.array(thymio["prox.horizontal"]) / sensor_scale
-
             # Compute outputs of neurons and set motor powers
             y[0] = np.sum(x * w_l)
             y[1] = np.sum(x * w_r)
-
             print(j, int(y[0]), int(y[1]), thymio["prox.horizontal"])
             move(thymio, l_speed=int(y[0]), r_speed=int(y[1]))
+        else:
+            print("inside other condition")

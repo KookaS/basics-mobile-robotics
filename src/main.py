@@ -35,12 +35,8 @@ def main():
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
     print_thymio(th)
-
-    # run_ann_without_memory(th)
-
-    tuning = InitTuning(th)
-    tuning.tune()
-
+    run_ann_without_memory(th)
+    print("end of main")
     # state = State(th)
     # state.acquire_data()
 
