@@ -9,7 +9,9 @@ load_dotenv()
 
 def move(thymio: Thymio, l_speed: int = 500, r_speed: int = 500, verbose: bool = False):
     """
-    Move the robot's wheels.
+    Move the robot's wheels correctly. Manages the negative speed well.
+    Once this function is called the robot will continue forever if no further implementation is used.
+    Wrap this function to set the conditions for moving.
 
     :param thymio:      the class to which the robot is referred to
     :param r_speed:     left speed
@@ -37,7 +39,6 @@ def stop(thymio: Thymio, verbose=False):
     :param thymio:      the class to which the robot is referred to
     :param verbose:     printing the stop command in the terminal
     """
-
     # Printing the speeds if requested
     if verbose:
         print("\t\t Stopping")
@@ -46,24 +47,59 @@ def stop(thymio: Thymio, verbose=False):
     thymio.set_var("motor.right.target", 0)
 
 
-def rotate(thymio: Thymio, angle: float, verbose: bool = False):
+def rotate(thymio: Thymio, angle: float, verbose: bool = False, function=stop, args=None, kwargs=None):
     """
     Rotates the coordinates of a matrix by the desired angle
 
+    :param function:    function to execute at the end of rotation, default stop
+    :param args:        array of non-keyworded arguments of function
+    :param kwargs:      set of keyworded arguments
     :param thymio:      the class to which the robot is referred to
-    :param angle:       angle in radians by which we want to rotate
+    :param angle:       angle in radians by which we want to rotate, positive or negative
     :param verbose:     printing the speed in the terminal
+    :return: timer to check if it is still alive or not
     """
-
+    args_f = args if args is not None else [thymio]
+    kwargs_f = kwargs if kwargs is not None else {}
     l_speed = 100 * int(np.sign(angle))
     r_speed = -100 * int(np.sign(angle))
-    turn_time = float(os.getenv("ONE_TURN_TIME")) * angle / 180.0
+    turn_time = float(os.getenv("HALF_TURN_TIME")) * angle / 180.0
 
     # Printing the speeds if requested
     if verbose:
-        print("\t\t Setting speed : ", l_speed, r_speed, turn_time)
+        print("\t\t Rotate speed & time : ", l_speed, r_speed, turn_time)
 
-    timer = Timer(interval=turn_time, function=move, args=[thymio, 0, 0])
     move(thymio, l_speed, r_speed)
-    timer.run()  # timer calls the function at the end of the interval
-    timer.cancel()  # stop the timer's action if it's still waiting
+    timer = Timer(interval=turn_time, function=function, args=args_f, kwargs=kwargs_f)
+    timer.start()
+    return timer
+
+
+def advance(thymio: Thymio, distance: float, speed: int = 1, verbose: bool = False, function=stop, args=None,
+            kwargs=None):
+    """
+    Rotates the coordinates of a matrix by the desired angle
+
+    :param kwargs:      function to execute at the end of advancing, default stop
+    :param args:        array of non-keyworded arguments of function
+    :param function:    set of keyworded arguments
+    :param thymio:      the class to which the robot is referred to
+    :param distance:    distance in cm by which we want to move, positive or negative
+    :param speed:       the speed factor at which the robot goes
+    :param verbose:     printing the speed in the terminal
+    :return: timer to check if it is still alive or not
+    """
+    args_f = args if args is not None else [thymio]
+    kwargs_f = kwargs if kwargs is not None else {}
+    l_speed = speed * 100 * int(np.sign(distance))
+    r_speed = speed * 100 * int(np.sign(distance))
+    distance_time = float(os.getenv("DISTANCE_40CM_TIME")) * distance / 40.0
+
+    # Printing the speeds if requested
+    if verbose:
+        print("\t\t Advance speed & time : ", l_speed, r_speed, distance_time)
+
+    move(thymio, l_speed, r_speed)
+    timer = Timer(interval=distance_time, function=function, args=args_f, kwargs=kwargs_f)
+    timer.start()
+    return timer
