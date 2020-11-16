@@ -1,11 +1,19 @@
 import string
+import threading
 import time
+import os
+from enum import Enum
 import numpy as np
 import math
 from scipy.interpolate import interp1d
-from typing import List
+
+from src.displacement.movement import move, advance, rotate, stop
 from src.thymio.Thymio import Thymio
 from src.sensors.state import RepeatedTimer
+from dotenv import load_dotenv
+from threading import Timer
+
+load_dotenv()
 
 # Sensor measurements
 sensor_distances = np.array([i for i in range(0, 21)])
@@ -79,83 +87,69 @@ def print_sensor_values(thymio: Thymio, sensor_id: string, print_duration=3, del
         print(thymio[sensor_id])
 
 
-class InitTuning(object):
+class InitEnum(Enum):
+    STOP = 0
+    FORWARD_TUNE = 1
+    TURN_TUNE = 2
+
+
+class InitTuning:
     """
     Tune the robot to go in a straight line
     """
 
-    def __init__(self, thymio: Thymio, ts: float = 0.1):
-        self.CONST_STOP = 0
-        self.CONST_FORWARD_TUNE = 1
-        self.CONST_TURN_TUNE = 2
-        self.CONST_ONE_TURN_TUNE = 8873
-        self.CONST_SAMPLING_TUNE = 5
-        self.state = 0
-        self.time = 0
-        self.thymio = thymio
-        self.thymio.set_var("motor.left.target", 0)
-        self.thymio.set_var("motor.right.target", 0)
-        self.ts = ts
+    def __init__(self, thymio: Thymio, interval_check=0.05, interval_sleep=0.1, distance=15.0, angle=180.0):
+        self.thymio: Thymio = thymio
+        self.interval_check = interval_check
+        self.interval_sleep = interval_sleep
+        self.distance = distance
+        self.angle = angle
+        self.tune_thread = threading.Event()
+        self.timer_advance = Timer(interval=0.1, function=move)
+        self.timer_rotate = Timer(interval=0.1, function=move)
+        threading.Thread(target=self.__tune_thread_init).start()
+        print("after starting all threads!")
+        self.__check_thread_init()
 
     def __forward(self):
         """
         Make the robot go forward
         """
-        self.state = self.CONST_FORWARD_TUNE
-        self.time = 0
-        self.thymio.set_var("motor.left.target", 100)
-        self.thymio.set_var("motor.right.target", 100)
+        self.tune_thread.set()  # run a thread, flag from false to true
 
     def __center(self):
         """
         Make the robot stop
         """
-        self.state = self.CONST_FORWARD_TUNE
-        self.time = 0
-        self.thymio.set_var("motor.left.target", 0)
-        self.thymio.set_var("motor.right.target", 0)
+        self.tune_thread.clear()  # set the thread flag to false
+        self.tune_thread.wait()  # if thread flag is false, then pause the thread
+        stop(self.thymio)
 
-    def __tune_wheels(self):
-        """
-        Tune the wheels to have a straight motion
-        """
+    def __check_thread_init(self):
+        threading.Timer(self.interval_check, self.__check_handler).start()  # will check every time the conditions
+        self.tune_thread.set()
 
-        # manual mode
+    def __tune_thread_init(self):
+        print("Waiting on thread")
+        self.tune_thread.wait()
+        print("thread is fired")
+        self.__tune_handler()
+
+    def __check_handler(self):
         if self.thymio["button.center"] == 1:
             print("center")
             self.__center()
-            return
         elif self.thymio["button.forward"] == 1:
             print("forward")
             self.__forward()
-            return
+        Timer(interval=self.interval_check, function=self.__check_handler).start()
 
-        self.time += 1
-        print(self.time)
-        if self.state == self.CONST_FORWARD_TUNE:
-            if self.time > (self.CONST_ONE_TURN_TUNE / self.CONST_SAMPLING_TUNE / 2):
-                "turn!"
-                self.time = 0
-                self.state = self.CONST_TURN_TUNE
-                self.thymio.set_var("motor.left.target", 100)
-                self.thymio.set_var("motor.right.target", -100)
-                return
+    def __tune_handler(self):
+        if not self.timer_rotate.is_alive() and not self.timer_advance.is_alive():
+            self.timer_advance = advance(thymio=self.thymio, distance=self.distance, verbose=True,
+                                         function=self.__rot_handler, args=[self.thymio])
 
-        elif self.state == self.CONST_TURN_TUNE:
-            if self.time > (self.CONST_ONE_TURN_TUNE / self.CONST_SAMPLING_TUNE / 2):
-                "straight!"
-                self.time = 0
-                self.state = self.CONST_FORWARD_TUNE
-                self.thymio.set_var("motor.left.target", 100)
-                self.thymio.set_var("motor.right.target", 99)
-                return
+        Timer(interval=self.interval_sleep, function=self.__tune_handler).start()
 
-    def tune(self):
-        """
-        Launches the tuning process
-        """
-        self.__forward()
-        print("before timer")
-        self.ts = 1
-        rt = RepeatedTimer(self.ts, print("test"))
-        print("after timer")
+    def __rot_handler(self, thymio: Thymio):
+        self.timer_rotate = rotate(thymio=thymio, angle=self.angle, verbose=True)

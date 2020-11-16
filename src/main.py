@@ -4,6 +4,8 @@ import pprint
 import time
 
 from src.displacement.management import EventHandler
+from src.displacement.movement import advance
+from src.sensors.tuning import InitTuning
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
 
@@ -35,9 +37,8 @@ def main():
     # print_thymio(th)
 
     # rotate(thymio=th, angle=90.0, verbose=True)
-    # state = State(th)
-    # state.acquire_data()
-    handler = EventHandler(th, interval_check=5)  # check every interval_check seconds to change scenarios
+    InitTuning(thymio=th, distance=15.0, angle=180.0)
+    # EventHandler(thymio=th, interval_check=5)  # check every interval_check seconds to change scenarios
     print("end of main!")
 
 
