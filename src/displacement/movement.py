@@ -61,16 +61,16 @@ def rotate(thymio: Thymio, angle: float, verbose: bool = False, function=stop, a
     """
     args_f = args if args is not None else [thymio]
     kwargs_f = kwargs if kwargs is not None else {}
-    l_speed = 100 * int(np.sign(angle))
-    r_speed = -100 * int(np.sign(angle))
+    l_speed = int(os.getenv("LEFT_WHEEL_SCALING")) * int(np.sign(angle))
+    r_speed = -int(os.getenv("RIGHT_WHEEL_SCALING")) * int(np.sign(angle))
     turn_time = float(os.getenv("HALF_TURN_TIME")) * angle / 180.0
 
     # Printing the speeds if requested
     if verbose:
         print("\t\t Rotate speed & time : ", l_speed, r_speed, turn_time)
 
-    move(thymio, l_speed, r_speed)
     timer = Timer(interval=turn_time, function=function, args=args_f, kwargs=kwargs_f)
+    move(thymio, l_speed, r_speed)
     timer.start()
     return timer
 
@@ -91,15 +91,15 @@ def advance(thymio: Thymio, distance: float, speed: int = 1, verbose: bool = Fal
     """
     args_f = args if args is not None else [thymio]
     kwargs_f = kwargs if kwargs is not None else {}
-    l_speed = speed * 100 * int(np.sign(distance))
-    r_speed = speed * 100 * int(np.sign(distance))
-    distance_time = float(os.getenv("DISTANCE_40CM_TIME")) * distance / 40.0
+    l_speed = speed * int(os.getenv("LEFT_WHEEL_SCALING")) * int(np.sign(distance))
+    r_speed = speed * int(os.getenv("RIGHT_WHEEL_SCALING")) * int(np.sign(distance))
+    distance_time = float(os.getenv("DISTANCE_TIME")) * distance / speed
 
     # Printing the speeds if requested
     if verbose:
         print("\t\t Advance speed & time : ", l_speed, r_speed, distance_time)
 
-    move(thymio, l_speed, r_speed)
     timer = Timer(interval=distance_time, function=function, args=args_f, kwargs=kwargs_f)
+    move(thymio, l_speed, r_speed)
     timer.start()
     return timer
