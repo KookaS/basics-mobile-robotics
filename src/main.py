@@ -4,7 +4,6 @@ import pprint
 import time
 
 from src.displacement.management import EventHandler
-from src.displacement.movement import advance
 from src.sensors.tuning import InitTuning
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
@@ -33,13 +32,12 @@ def print_thymio(thymio: Thymio):
 
 def main():
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
-    time.sleep(3)  # To make sure the Thymio has had time to connect
+    time.sleep(5)  # To make sure the Thymio has had time to connect
     # print_thymio(th)
 
-    # rotate(thymio=th, angle=90.0, verbose=True)
-    InitTuning(thymio=th, distance=15.0, angle=180.0)
-    # EventHandler(thymio=th, interval_check=5)  # check every interval_check seconds to change scenarios
-    print("end of main!")
+    # InitTuning(thymio=th, distance=2, angle=2.0)
+    EventHandler(thymio=th)  # check every interval_check seconds to change scenarios
+    print("END OF MAIN!")
 
 
 if __name__ == "__main__":

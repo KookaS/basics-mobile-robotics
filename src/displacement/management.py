@@ -15,10 +15,11 @@ class EventEnum(Enum):
 
 
 class EventHandler:
-    def __init__(self, thymio: Thymio, interval_check, interval_sleep=0.5):
+    def __init__(self, thymio: Thymio, interval_check=1.0, interval_sleep=0.1):
         self.thymio: Thymio = thymio
         self.interval_check = interval_check
         self.interval_sleep = interval_sleep
+        self.timer_check = threading.Timer(self.interval_check, self.__check_handler)
         self.events = []
         for _ in EventEnum:
             self.events.append(threading.Event())
@@ -32,7 +33,7 @@ class EventHandler:
         """
         Initialize the thread for checking scenarios, then pause it until next call.
         """
-        threading.Timer(self.interval_check, self.__check_handler).start()  # will check every time the conditions
+        self.timer_check.start()  # will check every time the conditions
         self.state = EventEnum.STOP.value
         self.events[EventEnum.STOP.value].set()
 
@@ -74,27 +75,29 @@ class EventHandler:
         When .wait() if the flag is false then pause the thread.
         When .clear() if the flag is true changes it to false.
         When .set() if the flag is false and thead paused, run the thread and flag to true.
+
+        Example:
+            EventHandler(thymio=th, interval_check=5)
         """
-        threading.Timer(5.0, self.__check_handler).start()  # will check every time the conditions
-        print("check_conditions")
+        # print(threading.active_count())
+        self.timer_check.run()
 
         sensor = 2000  # that's just random for testing
-        if self.state != EventEnum.GLOBAL.value and sensor > 1000:  # condition to go into global path planning
+        if self.state != EventEnum.GLOBAL.value and sensor > 1000:  # CHECK HERE FOR THE GLOBAL CONDITION
             print("changing to GLOBAL!!")
-            print(self.events[self.state])
             self.events[self.state].clear()  # set the thread flag to false
             self.events[self.state].wait()  # if thread flag is false, then pause the thread
             self.state = EventEnum.GLOBAL.value
             self.events[EventEnum.GLOBAL.value].set()  # run a thread, flag from false to true
 
-        elif self.state != EventEnum.LOCAL.value and sensor > 3000:  # condition to go into local avoidance
+        elif self.state != EventEnum.LOCAL.value and sensor > 3000:  # CHECK HERE FOR THE LOCAL CONDITION
             print("changing to LOCAL!!")
             self.events[self.state].clear()
             self.events[self.state].wait()
             self.state = EventEnum.LOCAL.value
             self.events[EventEnum.LOCAL.value].set()
 
-        elif self.state != EventEnum.STOP.value and sensor > 3000:  # condition to go into stop
+        elif self.state != EventEnum.STOP.value and sensor > 3000:  # CHECK HERE FOR THE STOP CONDITION
             print("changing to STOP!!")
             self.events[self.state].clear()
             self.events[self.state].wait()
@@ -107,7 +110,9 @@ class EventHandler:
         This function is called on it's own thread every interval_sleep seconds.
         """
         print("inside global_handler")
-        # code here
+
+        # CALL A FUNCTION HERE THAT HANDLES ALL THE CODE FOR GLOBAL
+
         threading.Timer(self.interval_sleep, self.__global_handler).start()
 
     def __local_handler(self):
@@ -116,7 +121,9 @@ class EventHandler:
         This function is called on it's own thread every interval_sleep seconds.
         """
         print("inside local_handler")
-        # code here
+
+        # CALL A FUNCTION HERE THAT HANDLES ALL THE CODE FOR LOCAL
+
         threading.Timer(self.interval_sleep, self.__local_handler).start()
 
     def __stop_handler(self):
@@ -125,7 +132,9 @@ class EventHandler:
         This function is called on it's own thread every interval_sleep seconds.
         """
         print("inside stop_handler")
-        # code here
+
+        # CALL A FUNCTION HERE THAT HANDLES ALL THE CODE FOR STOPPING
+
         threading.Timer(self.interval_sleep, self.__stop_handler).start()
 
 

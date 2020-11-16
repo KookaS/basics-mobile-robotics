@@ -1,15 +1,12 @@
 import string
 import threading
 import time
-import os
-from enum import Enum
 import numpy as np
 import math
 from scipy.interpolate import interp1d
 
-from src.displacement.movement import move, advance, rotate, stop
+from src.displacement.movement import advance, rotate, stop
 from src.thymio.Thymio import Thymio
-from src.sensors.state import RepeatedTimer
 from dotenv import load_dotenv
 from threading import Timer
 
@@ -48,15 +45,15 @@ def sensor_val_to_cm_dist(val: int) -> int:
     return np.asscalar(f(val))
 
 
-def obstacles_pos_from_sensor_vals(sensor_vals):
+def obstacles_pos_from_sensor_val(sensor_val):
     """
     Returns a list containing the position of the obstacles
     w.r.t the center of the Thymio robot.
 
-    :param sensor_vals:     sensor values provided clockwise starting from the top left sensor.
+    :param sensor_val:     sensor values provided clockwise starting from the top left sensor.
     :return: numpy.array()  that contains the position of the different obstacles
     """
-    dist_to_sensor = [sensor_val_to_cm_dist(x) for x in sensor_vals]
+    dist_to_sensor = [sensor_val_to_cm_dist(x) for x in sensor_val]
     dx_from_sensor = [d * math.cos(alpha) for (d, alpha) in zip(dist_to_sensor, sensor_angles)]
     dy_from_sensor = [d * math.sin(alpha) for (d, alpha) in zip(dist_to_sensor, sensor_angles)]
     obstacles_pos = [[x[0] + dx, x[1] + dy] for (x, dx, dy) in
@@ -87,26 +84,25 @@ def print_sensor_values(thymio: Thymio, sensor_id: string, print_duration=3, del
         print(thymio[sensor_id])
 
 
-class InitEnum(Enum):
-    STOP = 0
-    FORWARD_TUNE = 1
-    TURN_TUNE = 2
-
-
 class InitTuning:
     """
-    Tune the robot to go in a straight line
+    Tune the robot to go in a straight line.
+    Be careful, make it run for more than one lien because apparently there are some error initially.
+
+    Example:
+    InitTuning(thymio=th, distance=15.0, angle=180.0)
     """
 
-    def __init__(self, thymio: Thymio, interval_check=0.05, interval_sleep=0.1, distance=15.0, angle=180.0):
+    def __init__(self, thymio: Thymio, interval_check=0.1, interval_sleep=0.1, distance=15.0, angle=180.0):
         self.thymio: Thymio = thymio
         self.interval_check = interval_check
         self.interval_sleep = interval_sleep
         self.distance = distance
         self.angle = angle
         self.tune_thread = threading.Event()
-        self.timer_advance = Timer(interval=0.1, function=move)
-        self.timer_rotate = Timer(interval=0.1, function=move)
+        self.timer_advance = Timer(interval=interval_sleep, function=stop)
+        self.timer_rotate = Timer(interval=interval_sleep, function=stop)
+        self.timer_check = Timer(interval=self.interval_check, function=self.__check_handler)
         threading.Thread(target=self.__tune_thread_init).start()
         print("after starting all threads!")
         self.__check_thread_init()
@@ -115,15 +111,30 @@ class InitTuning:
         """
         Make the robot go forward
         """
+        print("Forward button pressed!")
+        self.timer_check.start()
         self.tune_thread.set()  # run a thread, flag from false to true
 
     def __center(self):
         """
         Make the robot stop
+
+        To remove a thread .set() & .join()
+        To remove a timer .cancel() & .join()
+        TODO: Still has problems if you press the button in the center
         """
-        self.tune_thread.clear()  # set the thread flag to false
-        self.tune_thread.wait()  # if thread flag is false, then pause the thread
-        stop(self.thymio)
+        print("Center Button pressed!")
+        self.timer_check.run()
+        # print(threading.active_count())
+        if self.timer_advance.is_alive():
+            self.timer_advance.cancel()
+            self.timer_advance.join()
+        if self.timer_rotate.is_alive():
+            self.timer_rotate.cancel()
+            self.timer_advance.join()
+        if self.tune_thread.is_set():
+            self.tune_thread.clear()  # set the thread flag to false
+            self.tune_thread.wait()  # if thread flag is false, then pause the thread
 
     def __check_thread_init(self):
         threading.Timer(self.interval_check, self.__check_handler).start()  # will check every time the conditions
@@ -137,19 +148,22 @@ class InitTuning:
 
     def __check_handler(self):
         if self.thymio["button.center"] == 1:
-            print("center")
             self.__center()
         elif self.thymio["button.forward"] == 1:
-            print("forward")
             self.__forward()
-        Timer(interval=self.interval_check, function=self.__check_handler).start()
+        else:
+            self.timer_check.run()
 
     def __tune_handler(self):
+        # print(threading.active_count())
         if not self.timer_rotate.is_alive() and not self.timer_advance.is_alive():
+            stop(self.thymio, verbose=True)
             self.timer_advance = advance(thymio=self.thymio, distance=self.distance, verbose=True,
                                          function=self.__rot_handler, args=[self.thymio])
-
-        Timer(interval=self.interval_sleep, function=self.__tune_handler).start()
+        else:
+            Timer(interval=self.interval_sleep, function=self.__tune_handler).start()
 
     def __rot_handler(self, thymio: Thymio):
+        stop(self.thymio, verbose=True)
         self.timer_rotate = rotate(thymio=thymio, angle=self.angle, verbose=True)
+        Timer(interval=self.interval_sleep, function=self.__tune_handler).start()
