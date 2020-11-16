@@ -1,100 +1,109 @@
+import string
 import time
-from threading import Timer
-
+import numpy as np
+import math
+from scipy.interpolate import interp1d
 from src.thymio.Thymio import Thymio
 
+# Sensor measurements
+sensor_distances = np.array([i for i in range(0, 21)])
+sensor_measurements = np.array([5120, 4996, 4964, 4935, 4554, 4018, 3624, 3292, 2987,
+                                2800, 2580, 2307, 2039, 1575, 1127, 833, 512, 358, 157, 52, 0])
+# sensor_distances = np.array([0, 30])
+# sensor_measurements = np.array([5120, 0])
 
-class RepeatedTimer(object):
+# Thymio outline
+center_offset = np.array([5.5, 5.5])
+thymio_coords = np.array([[0, 0], [11, 0], [11, 8.5], [10.2, 9.3],
+                          [8, 10.4], [5.5, 11], [3.1, 10.5],
+                          [0.9, 9.4], [0, 8.5], [0, 0]]) - center_offset
+
+# Sensor positions and orientations
+sensor_pos_from_center = np.array(
+    [[0.9, 9.4], [3.1, 10.5], [5.5, 11.0], [8.0, 10.4], [10.2, 9.3], [8.5, 0], [2.5, 0]]) - center_offset
+sensor_angles = np.array([120, 105, 90, 75, 60, -90, -90]) * math.pi / 180
+
+
+def sensor_val_to_cm_dist(val: int) -> int:
     """
-        Timer used to get the evolution of the state of the robot
+    Interpolation from sensor values to distances in cm
 
-        :attribute _timer:          Timer used internally
-        :attribute interval:        Interval of time
-        :attribute function:        Callback function
-        :attribute args:            non-keyworded variable length argument list to the function
-        :attribute kwargs:          keyworded variable length of arguments to a function
-        :attribute is_running:      tells if the timer runs or not
-
-        We do not use it !!! Delete at the end of project!!!
+    :param val: the sensor value that you want to convert to a distance
+    :return:    corresponding distance in cm
     """
+    if val == 0:
+        return np.inf
 
-    def __init__(self, interval, function, args=None, kwargs=None):
-        self._timer = None
-        self.interval = interval
-        self.function = function
-        self.args = args if args is not None else []
-        self.kwargs = kwargs if kwargs is not None else {}
-        self.is_running = False
-        self.start()
-
-    def _run(self):
-        self.is_running = False
-        self.start()
-        self.function(*self.args, **self.kwargs)
-
-    def start(self):
-        if not self.is_running:
-            self._timer = Timer(self.interval, self._run)
-            self._timer.start()
-            self.is_running = True
-
-    def stop(self):
-        self._timer.cancel()
-        self.is_running = False
+    f = interp1d(sensor_measurements, sensor_distances)
+    return np.asscalar(f(val))
 
 
-class State:
+def obstacles_pos_from_sensor_val(sensor_val):
+    """
+    Returns a list containing the position of the obstacles
+    w.r.t the center of the Thymio robot.
+
+    :param sensor_val:     sensor values provided clockwise starting from the top left sensor.
+    :return: numpy.array()  that contains the position of the different obstacles
+    """
+    dist_to_sensor = [sensor_val_to_cm_dist(x) for x in sensor_val]
+    dx_from_sensor = [d * math.cos(alpha) for (d, alpha) in zip(dist_to_sensor, sensor_angles)]
+    dy_from_sensor = [d * math.sin(alpha) for (d, alpha) in zip(dist_to_sensor, sensor_angles)]
+    obstacles_pos = [[x[0] + dx, x[1] + dy] for (x, dx, dy) in
+                     zip(sensor_pos_from_center, dx_from_sensor, dy_from_sensor)]
+    return np.array(obstacles_pos)
+
+
+def print_sensor_values(thymio: Thymio, sensor_id: string, print_duration=3, delta_time=0.5):
+    """
+    While the end time has not been reached, print the sensor values every delta_time seconds
+
+    :param thymio:          the class of Thymio to refer to the robot
+    :param sensor_id:       sensor values provided clockwise starting from the top left sensor.
+    :param print_duration:  sensor values provided clockwise starting from the top left sensor.
+    :param delta_time:      sensor values provided clockwise starting from the top left sensor.
+    :return: numpy.array()  that contains the position of the different obstacles
+
+    Example:
+
+        print_sensor_values('prox.ground.reflected')
+
+        print_sensor_values('prox.horizontal', 3)
+    """
+    t_end = time.time() + print_duration
+
+    while time.time() < t_end:
+        time.sleep(delta_time)
+        print(thymio[sensor_id])
+
+
+class SensorHandler:
     """
     Get the data from every sensors
 
-    :attribute ts:          the time interval
-    :attribute data:        ground, sensor, left_speed and right_speed at every sample
-    :attribute thymio:      class of the robot to refer to
+    :param thymio:      class of the robot to refer to
     """
 
-    def __init__(self, thymio: Thymio, ts: float = 0.1):
-        self.ts = ts
-        self.data = []
+    def __init__(self, thymio: Thymio):
         self.thymio = thymio
 
-    def __get_data(self):
-        """
-        Get the data from every sensors
+    def ground(self):
+        return {"ground": self.thymio["prox.ground.reflected"]}
 
-        :param thymio: The file location of the spreadsheet
-        """
-        self.data.append({"ground": self.thymio["prox.ground.reflected"],
-                          "sensor": self.thymio["prox.ground.reflected"],
-                          "left_speed": self.thymio["motor.left.speed"],
-                          "right_speed": self.thymio["motor.right.speed"]})
+    def sensor(self):
+        return {"sensor": self.thymio["prox.horizontal"]}
 
-    def acquire_data(self):
-        """
-        Fetch the robot state
-        """
-        rt = RepeatedTimer(self.ts, self.__get_data())  # it auto-starts, no need of rt.start()
-        try:
-            time.sleep(5)
-            self.thymio.set_var("motor.left.target", 55)
-            self.thymio.set_var("motor.right.target", 50)
-            time.sleep(25)  # your long-running job goes here...
-        finally:
-            rt.stop()  # better in a try/finally block to make sure the program ends!
-            self.thymio.set_var("motor.left.target", 0)
-            self.thymio.set_var("motor.right.target", 0)
+    def speed(self):
+        return {"left_speed": self.thymio["motor.left.speed"],
+                "right_speed": self.thymio["motor.right.speed"]}
 
-    def data(self):
+    def all(self):
         """
-        Fetch the data of thymio
+        Fetch the all the data data of thymio
 
         :return: return the data of thymio of the time interval
         """
-        return self.data
-
-    def ts(self) -> float:
-        """
-        Fetch the time interval
-
-        :return: return the time interval
-        """
-        return self.ts
+        return {"ground": self.thymio["prox.ground.reflected"],
+                "sensor": self.thymio["prox.horizontal"],
+                "left_speed": self.thymio["motor.left.speed"],
+                "right_speed": self.thymio["motor.right.speed"]}
