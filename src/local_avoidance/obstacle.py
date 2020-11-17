@@ -60,7 +60,6 @@ class ObstacleAvoidance:
 
     def __check_turning(self):
         speed = self.sensor_handler.speed()
-        print(speed)
         if speed['left_speed'] or speed['right_speed']:
             time.sleep(self.interval_sleep)
             self.__check_turning()

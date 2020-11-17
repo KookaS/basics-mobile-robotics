@@ -23,10 +23,13 @@ class EventHandler:
             EventHandler(thymio=th, interval_check=5)
     """
 
-    def __init__(self, thymio: Thymio, interval_check=0.2, interval_sleep=0.1):
+    def __init__(self, thymio: Thymio, interval_check=0.2, interval_sleep=0.1, obstacle_threshold=2000,
+                 stop_threshold=4500):
         self.thymio: Thymio = thymio
         self.interval_check = interval_check
         self.interval_sleep = interval_sleep
+        self.obstacle_threshold = obstacle_threshold
+        self.stop_threshold = stop_threshold
         self.sensor_handler = SensorHandler(self.thymio)
         self.check_timer = threading.Timer(self.interval_check, self.__check_handler)
         self.running = []
@@ -53,14 +56,14 @@ class EventHandler:
         print(sensor_values)
 
         sensor = np.amax(sensor_values["sensor"]).astype(int)  # RANDOM CONDITION FOR TESTING
-        if self.state != EventEnum.GLOBAL.value and sensor <= 2500:  # CHECK HERE FOR THE GLOBAL CONDITION
+        if self.state != EventEnum.GLOBAL.value and sensor <= self.obstacle_threshold:  # CHECK HERE FOR THE GLOBAL CONDITION
             print("changing to GLOBAL!!")
             self.running[self.state] = False
             self.running[EventEnum.GLOBAL.value] = True
             self.state = EventEnum.GLOBAL.value
             threading.Timer(self.interval_sleep, self.__global_handler).start()
 
-        elif self.state != EventEnum.LOCAL.value and sensor > 2500:  # CHECK HERE FOR THE LOCAL CONDITION
+        elif self.state != EventEnum.LOCAL.value and sensor > self.obstacle_threshold:  # CHECK HERE FOR THE LOCAL CONDITION
             print("changing to LOCAL!!")
             self.running[self.state] = False
             self.running[EventEnum.LOCAL.value] = True
@@ -68,7 +71,7 @@ class EventHandler:
             threading.Timer(self.interval_sleep, self.__local_handler).start()
             return
 
-        elif self.state != EventEnum.STOP.value and sensor >= 4500:  # CHECK HERE FOR THE STOP CONDITION
+        elif self.state != EventEnum.STOP.value and sensor >= self.stop_threshold:  # CHECK HERE FOR THE STOP CONDITION
             print("changing to STOP!!")
             self.running[self.state] = False
             self.running[EventEnum.STOP.value] = True
@@ -95,7 +98,7 @@ class EventHandler:
         This function is called on it's own thread every interval_sleep seconds.
         """
         # print("inside local_handler")
-        ObstacleAvoidance(self.thymio, distance_avoidance=24.0)
+        ObstacleAvoidance(self.thymio, distance_avoidance=8.0)
         print("after avoidance")
         self.check_timer = threading.Timer(self.interval_check, self.__check_handler)
         self.check_timer.start()
