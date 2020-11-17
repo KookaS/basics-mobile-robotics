@@ -16,11 +16,6 @@ class EventEnum(Enum):
 
 class EventHandler:
     """
-    Threading:
-        There is one event per thread here. Events interacts with threads to manage them.
-        When event.wait() it set the flag of the thread to False.
-        When event.set() if the flag is false, run the thread and flag to true.
-
     Example:
             EventHandler(thymio=th, interval_check=5)
     """
@@ -33,8 +28,6 @@ class EventHandler:
         self.running = []
         for _ in EventEnum:
             self.running.append(False)
-
-        print("after starting all threads!")
         self.__check_thread_init()
 
     def __check_thread_init(self):
@@ -43,6 +36,8 @@ class EventHandler:
         """
         threading.Timer(self.interval_check, self.__check_handler).start()  # will check every time the conditions
         self.state = EventEnum.STOP.value
+        self.running[EventEnum.STOP.value] = True
+        self.__stop_handler()
 
     def __check_handler(self):
         """
@@ -50,39 +45,39 @@ class EventHandler:
         This function is called on it's own thread every interval_check seconds.
         """
         threading.Timer(self.interval_check, self.__check_handler).start()
-        print(threading.active_count())
-        values = self.sensor_handler.sensor()
+        # print(threading.active_count())
+        values = self.sensor_handler.all_cm()
         print(values)
 
-        sensor = np.amax(values["sensor"]).astype(int)  # RANDOM CONDITION FOR TESTING
-        print(sensor)
+        sensor = 0
+        # sensor = np.amax(values["sensor"]).astype(int)  # RANDOM CONDITION FOR TESTING
         if self.state != EventEnum.GLOBAL.value and sensor > 2000:  # CHECK HERE FOR THE GLOBAL CONDITION
             print("changing to GLOBAL!!")
             self.running[self.state] = False
             self.running[EventEnum.GLOBAL.value] = True
             self.state = EventEnum.GLOBAL.value
-            threading.Thread(target=self.__global_handler).start()
+            threading.Timer(self.interval_sleep, self.__global_handler).start()
 
         elif self.state != EventEnum.LOCAL.value and sensor > 4000:  # CHECK HERE FOR THE LOCAL CONDITION
             print("changing to LOCAL!!")
             self.running[self.state] = False
             self.running[EventEnum.LOCAL.value] = True
             self.state = EventEnum.LOCAL.value
-            threading.Thread(target=self.__local_handler).start()
+            threading.Timer(self.interval_sleep, self.__local_handler).start()
 
-        elif self.state != EventEnum.STOP.value and sensor >= 0:  # CHECK HERE FOR THE STOP CONDITION
+        elif self.state != EventEnum.STOP.value and sensor == 0:  # CHECK HERE FOR THE STOP CONDITION
             print("changing to STOP!!")
             self.running[self.state] = False
             self.running[EventEnum.STOP.value] = True
             self.state = EventEnum.STOP.value
-            threading.Thread(target=self.__stop_handler).start()
+            threading.Timer(self.interval_sleep, self.__stop_handler).start()
 
     def __global_handler(self):
         """
         Manages the thread for the GLOBAL scenario.
         This function is called on it's own thread every interval_sleep seconds.
         """
-        print("inside global_handler")
+        # print("inside global_handler")
 
         # CALL A FUNCTION HERE THAT HANDLES ALL THE CODE FOR GLOBAL
         if self.running[EventEnum.GLOBAL.value]:
@@ -93,7 +88,7 @@ class EventHandler:
         Manages the thread for the LOCAL scenario.
         This function is called on it's own thread every interval_sleep seconds.
         """
-        print("inside local_handler")
+        # print("inside local_handler")
 
         # CALL A FUNCTION HERE THAT HANDLES ALL THE CODE FOR LOCAL
 
@@ -105,7 +100,7 @@ class EventHandler:
         Manages the thread for the STOP scenario.
         This function is called on it's own thread every interval_sleep seconds.
         """
-        print("inside stop_handler")
+        # print("inside stop_handler")
 
         # CALL A FUNCTION HERE THAT HANDLES ALL THE CODE FOR STOPPING
 

@@ -1,5 +1,3 @@
-import string
-import time
 import numpy as np
 import math
 from scipy.interpolate import interp1d
@@ -54,29 +52,6 @@ def obstacles_pos_from_sensor_val(sensor_val):
     return np.array(obstacles_pos)
 
 
-def print_sensor_values(thymio: Thymio, sensor_id: string, print_duration=3, delta_time=0.5):
-    """
-    While the end time has not been reached, print the sensor values every delta_time seconds
-
-    :param thymio:          the class of Thymio to refer to the robot
-    :param sensor_id:       sensor values provided clockwise starting from the top left sensor.
-    :param print_duration:  sensor values provided clockwise starting from the top left sensor.
-    :param delta_time:      sensor values provided clockwise starting from the top left sensor.
-    :return: numpy.array()  that contains the position of the different obstacles
-
-    Example:
-
-        print_sensor_values('prox.ground.reflected')
-
-        print_sensor_values('prox.horizontal', 3)
-    """
-    t_end = time.time() + print_duration
-
-    while time.time() < t_end:
-        time.sleep(delta_time)
-        print(thymio[sensor_id])
-
-
 class SensorHandler:
     """
     Get the data from every sensors
@@ -90,20 +65,35 @@ class SensorHandler:
     def ground(self):
         return {"ground": self.thymio["prox.ground.reflected"]}
 
-    def sensor(self):
-        return {"sensor": self.thymio["prox.horizontal"]}
-
     def speed(self):
         return {"left_speed": self.thymio["motor.left.speed"],
                 "right_speed": self.thymio["motor.right.speed"]}
 
-    def all(self):
+    def sensor_raw(self):
+        return {"sensor": self.thymio["prox.horizontal"]}
+
+    def all_raw(self):
         """
         Fetch the all the data data of thymio
 
         :return: return the data of thymio of the time interval
         """
-        return {"ground": self.thymio["prox.ground.reflected"],
-                "sensor": self.thymio["prox.horizontal"],
+        return {"sensor": self.thymio["prox.horizontal"],
+                "ground": self.thymio["prox.ground.reflected"],
+                "left_speed": self.thymio["motor.left.speed"],
+                "right_speed": self.thymio["motor.right.speed"]}
+
+    def sensor_cm(self):
+        val = {"sensor": self.thymio["prox.horizontal"]}
+        return obstacles_pos_from_sensor_val(val['sensor'])
+
+    def all_cm(self):
+        """
+        Fetch the all the data data of thymio and converts sensor to cm
+
+        :return: return the data of thymio of the time interval
+        """
+        return {"sensor": obstacles_pos_from_sensor_val(self.thymio["prox.horizontal"]),
+                "ground": self.thymio["prox.ground.reflected"],
                 "left_speed": self.thymio["motor.left.speed"],
                 "right_speed": self.thymio["motor.right.speed"]}
