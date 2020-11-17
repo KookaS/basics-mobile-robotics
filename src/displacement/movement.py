@@ -7,7 +7,7 @@ from threading import Timer
 load_dotenv()
 
 
-def move(thymio: Thymio, l_speed: int = 500, r_speed: int = 500, verbose: bool = False):
+def move(thymio: Thymio, l_speed: int = 100, r_speed: int = 100, verbose: bool = False):
     """
     Move the robot's wheels correctly. Manages the negative speed well.
     Once this function is called the robot will continue forever if no further implementation is used.

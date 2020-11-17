@@ -19,12 +19,9 @@ def print_thymio(thymio: Thymio):
 
     :param thymio: The file location of the spreadsheet
     """
-
     print('All Thymio instance attributes:')
     pprint.pprint(dir(thymio))
-
-    # see what the different read-write variables that you can access are
-    variables = thymio.variable_description()
+    variables = thymio.variable_description()  # see what the different read-write variables that you can access are
     print('\nVariables of Thymio:')
     for var in variables:
         print(var)
@@ -36,7 +33,7 @@ def main():
     # print_thymio(th)
 
     # MotionTuning(thymio=th, distance=15, angle=180.0)
-    EventHandler(th)  # check every interval_check seconds to change scenarios
+    EventHandler(th, interval_check=0.1)  # check every interval_check seconds to change scenarios
     print("END OF MAIN!")
 
 

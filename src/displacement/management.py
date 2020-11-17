@@ -1,6 +1,9 @@
 import threading
 import numpy as np
 from enum import Enum
+
+from src.displacement.movement import advance, move
+from src.local_avoidance.obstacle import ObstacleAvoidance
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 
@@ -20,11 +23,12 @@ class EventHandler:
             EventHandler(thymio=th, interval_check=5)
     """
 
-    def __init__(self, thymio: Thymio, interval_check=1.0, interval_sleep=0.1):
+    def __init__(self, thymio: Thymio, interval_check=0.2, interval_sleep=0.1):
         self.thymio: Thymio = thymio
         self.interval_check = interval_check
         self.interval_sleep = interval_sleep
         self.sensor_handler = SensorHandler(self.thymio)
+        self.check_timer = threading.Timer(self.interval_check, self.__check_handler)
         self.running = []
         for _ in EventEnum:
             self.running.append(False)
@@ -34,7 +38,7 @@ class EventHandler:
         """
         Initialize the thread for checking scenarios, then pause it until next call.
         """
-        threading.Timer(self.interval_check, self.__check_handler).start()  # will check every time the conditions
+        self.check_timer.start()  # will check every time the conditions
         self.state = EventEnum.STOP.value
         self.running[EventEnum.STOP.value] = True
         self.__stop_handler()
@@ -44,33 +48,35 @@ class EventHandler:
         Handles the different scenarios in which the robot will be.
         This function is called on it's own thread every interval_check seconds.
         """
-        threading.Timer(self.interval_check, self.__check_handler).start()
         # print(threading.active_count())
-        values = self.sensor_handler.all_cm()
-        print(values)
+        sensor_values = self.sensor_handler.sensor_raw()
+        print(sensor_values)
 
-        sensor = 0
-        # sensor = np.amax(values["sensor"]).astype(int)  # RANDOM CONDITION FOR TESTING
-        if self.state != EventEnum.GLOBAL.value and sensor > 2000:  # CHECK HERE FOR THE GLOBAL CONDITION
+        sensor = np.amax(sensor_values["sensor"]).astype(int)  # RANDOM CONDITION FOR TESTING
+        if self.state != EventEnum.GLOBAL.value and sensor <= 2500:  # CHECK HERE FOR THE GLOBAL CONDITION
             print("changing to GLOBAL!!")
             self.running[self.state] = False
             self.running[EventEnum.GLOBAL.value] = True
             self.state = EventEnum.GLOBAL.value
             threading.Timer(self.interval_sleep, self.__global_handler).start()
 
-        elif self.state != EventEnum.LOCAL.value and sensor > 4000:  # CHECK HERE FOR THE LOCAL CONDITION
+        elif self.state != EventEnum.LOCAL.value and sensor > 2500:  # CHECK HERE FOR THE LOCAL CONDITION
             print("changing to LOCAL!!")
             self.running[self.state] = False
             self.running[EventEnum.LOCAL.value] = True
             self.state = EventEnum.LOCAL.value
             threading.Timer(self.interval_sleep, self.__local_handler).start()
+            return
 
-        elif self.state != EventEnum.STOP.value and sensor == 0:  # CHECK HERE FOR THE STOP CONDITION
+        elif self.state != EventEnum.STOP.value and sensor >= 4500:  # CHECK HERE FOR THE STOP CONDITION
             print("changing to STOP!!")
             self.running[self.state] = False
             self.running[EventEnum.STOP.value] = True
             self.state = EventEnum.STOP.value
             threading.Timer(self.interval_sleep, self.__stop_handler).start()
+        self.check_timer = threading.Timer(self.interval_check, self.__check_handler)
+        self.check_timer.start()
+        return
 
     def __global_handler(self):
         """
@@ -79,7 +85,7 @@ class EventHandler:
         """
         # print("inside global_handler")
 
-        # CALL A FUNCTION HERE THAT HANDLES ALL THE CODE FOR GLOBAL
+        move(thymio=self.thymio, l_speed=200, r_speed=200)
         if self.running[EventEnum.GLOBAL.value]:
             threading.Timer(self.interval_sleep, self.__global_handler).start()
 
@@ -89,11 +95,14 @@ class EventHandler:
         This function is called on it's own thread every interval_sleep seconds.
         """
         # print("inside local_handler")
+        ObstacleAvoidance(self.thymio, distance_avoidance=24.0)
+        print("after avoidance")
+        self.check_timer = threading.Timer(self.interval_check, self.__check_handler)
+        self.check_timer.start()
 
-        # CALL A FUNCTION HERE THAT HANDLES ALL THE CODE FOR LOCAL
-
-        if self.running[EventEnum.LOCAL.value]:
-            threading.Timer(self.interval_sleep, self.__local_handler).start()
+        self.state = EventEnum.STOP.value
+        self.running[EventEnum.STOP.value] = True
+        threading.Timer(self.interval_sleep, self.__stop_handler).start()
 
     def __stop_handler(self):
         """
