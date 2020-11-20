@@ -4,8 +4,10 @@ from enum import Enum
 
 from src.displacement.movement import advance, move
 from src.local_avoidance.obstacle import ObstacleAvoidance
+from src.path_planning.occupancy import display_global_path, display_occupancy
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
+from src.vision.kalman import detect_object
 
 
 class EventEnum(Enum):
@@ -15,6 +17,7 @@ class EventEnum(Enum):
     GLOBAL = 0
     LOCAL = 1
     STOP = 2
+    KALMAN = 3
 
 
 class EventHandler:
@@ -31,7 +34,6 @@ class EventHandler:
         self.obstacle_threshold = obstacle_threshold
         self.stop_threshold = stop_threshold
         self.sensor_handler = SensorHandler(self.thymio)
-        self.check_timer = threading.Timer(self.interval_check, self.__check_handler)
         self.running = []
         for _ in EventEnum:
             self.running.append(False)
@@ -41,7 +43,13 @@ class EventHandler:
         """
         Initialize the thread for checking scenarios, then pause it until next call.
         """
-        self.check_timer.start()  # will check every time the conditions
+
+        threading.Timer(self.interval_check, self.__check_handler).start()
+        """
+        self.state = EventEnum.KALMAN.value
+        self.running[EventEnum.KALMAN.value] = True
+        threading.Timer(self.interval_sleep, self.__kalman_handler).start()
+        """
         self.state = EventEnum.STOP.value
         self.running[EventEnum.STOP.value] = True
         self.__stop_handler()
@@ -61,7 +69,7 @@ class EventHandler:
             self.running[self.state] = False
             self.running[EventEnum.GLOBAL.value] = True
             self.state = EventEnum.GLOBAL.value
-            threading.Timer(self.interval_sleep, self.__global_handler).start()
+            threading.Timer(self.interval_sleep, self.__global_thread_init).start()
 
         elif self.state != EventEnum.LOCAL.value and sensor > self.obstacle_threshold:  # CHECK HERE FOR THE LOCAL CONDITION
             print("changing to LOCAL!!")
@@ -69,7 +77,7 @@ class EventHandler:
             self.running[EventEnum.LOCAL.value] = True
             self.state = EventEnum.LOCAL.value
             threading.Timer(self.interval_sleep, self.__local_handler).start()
-            return
+            return  # stop the code so that __check_handler is called after avoiding objects
 
         elif self.state != EventEnum.STOP.value and sensor >= self.stop_threshold:  # CHECK HERE FOR THE STOP CONDITION
             print("changing to STOP!!")
@@ -77,16 +85,21 @@ class EventHandler:
             self.running[EventEnum.STOP.value] = True
             self.state = EventEnum.STOP.value
             threading.Timer(self.interval_sleep, self.__stop_handler).start()
-        self.check_timer = threading.Timer(self.interval_check, self.__check_handler)
-        self.check_timer.start()
+        threading.Timer(self.interval_check, self.__check_handler).start()
         return
+
+    def __global_thread_init(self):
+        """
+        """
+        display_occupancy()
+        self.__global_handler()
 
     def __global_handler(self):
         """
         Manages the thread for the GLOBAL scenario.
         This function is called on it's own thread every interval_sleep seconds.
         """
-        # print("inside global_handler")
+        # print("inside __global_handler")
 
         move(thymio=self.thymio, l_speed=200, r_speed=200)
         if self.running[EventEnum.GLOBAL.value]:
@@ -97,11 +110,10 @@ class EventHandler:
         Manages the thread for the LOCAL scenario.
         This function is called on it's own thread every interval_sleep seconds.
         """
-        # print("inside local_handler")
+        print("inside __local_handler")
         ObstacleAvoidance(self.thymio, distance_avoidance=8.0)
-        print("after avoidance")
-        self.check_timer = threading.Timer(self.interval_check, self.__check_handler)
-        self.check_timer.start()
+        print("after ObstacleAvoidance")
+        threading.Timer(self.interval_check, self.__check_handler).start()
 
         self.state = EventEnum.STOP.value
         self.running[EventEnum.STOP.value] = True
@@ -112,9 +124,16 @@ class EventHandler:
         Manages the thread for the STOP scenario.
         This function is called on it's own thread every interval_sleep seconds.
         """
-        # print("inside stop_handler")
+        # print("inside __stop_handler")
 
         # CALL A FUNCTION HERE THAT HANDLES ALL THE CODE FOR STOPPING
 
         if self.running[EventEnum.STOP.value]:
             threading.Timer(self.interval_sleep, self.__stop_handler).start()
+
+    def __kalman_handler(self):
+        print("inside __kalman_handler")
+        detect_object()
+
+        if self.running[EventEnum.KALMAN.value]:
+            threading.Timer(self.interval_sleep, self.__kalman_handler).start()

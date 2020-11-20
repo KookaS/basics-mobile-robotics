@@ -1,101 +1,92 @@
-from typing import Dict
+import numpy as np
+import math
 
 
 def reconstruct_path(cameFrom, current):
     """
     Recurrently reconstructs the path from start node to the current node
-
     :param cameFrom: map (dictionary) containing for each node n the node immediately
-                     preceding it on the cheapest path from start to n currently known.
+                     preceding it on the cheapest path from start to n
+                     currently known.
     :param current: current node (x, y)
     :return: list of nodes from start to current node
     """
     total_path = [current]
     while current in cameFrom.keys():
-        # Add where the current node came from to the start of the list
+        # Add where the current node came from to the start of the list (add cameFrom[current] at the 0th index)
         total_path.insert(0, cameFrom[current])
         current = cameFrom[current]
     return total_path
 
 
-def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", max_val=max_val):
+def get_movements_8n():
     """
-    A* for 2D occupancy grid. Finds a path from start to goal.
+    Get all possible 8-connectivity movements.
+    - up
+    - down
+    - left
+    - right
+    - first diagonal (up-right)
+    - second diagonal (up-left)
+    - third diagonal (down-right)
+    - fourth diagonal (down-left)
+    :return: list of movements with cost [(dx, dy, movement_cost)]
+    """
+    s2 = math.sqrt(2)
+    return [(1, 0, 1.0),
+            (0, 1, 1.0),
+            (-1, 0, 1.0),
+            (0, -1, 1.0),
+            (1, 1, s2),
+            (-1, 1, s2),
+            (-1, -1, s2),
+            (1, -1, s2)]
+
+
+def A_Star(start, goal, final_occupancy_grid):
+    """
+    Execution of the A* algorithm for 2D occupancy grid. Finds a path from start to goal.
     h is the heuristic function. h(n) estimates the cost to reach goal from node n.
     :param start: start node (x, y)
-    :param goal_m: goal node (x, y)
+    :param goal: goal node (x, y)
     :param occupancy_grid: the grid map
-    :param movement: select between 4-connectivity ('4N') and 8-connectivity ('8N', default)
     :return: a tuple that contains: (the resulting path in meters, the resulting path in data array indices)
-
-    # Example:
-
-        # Define the start and end goal
-        start = (0,0)
-        goal = (43,33)
-
-
-
-        # -----------------------------------------
-        # DO NOT EDIT THIS PORTION OF CODE -
-        # EXECUTION AND PLOTTING OF THE ALGORITHM
-        # -----------------------------------------
-
-
-        # List of all coordinates in the grid
-        x,y = np.mgrid[0:max_val:1, 0:max_val:1]
-        pos = np.empty(x.shape + (2,))
-        pos[:, :, 0] = x; pos[:, :, 1] = y
-        pos = np.reshape(pos, (x.shape[0]*x.shape[1], 2))
-        coords = list([(int(x[0]), int(x[1])) for x in pos])
-
-        # Define the heuristic, here = distance to goal ignoring obstacles
-        h = np.linalg.norm(pos - goal, axis=-1)
-        h = dict(zip(coords, h))
-
-        # Run the A* algorithm
-        path, visitedNodes = A_Star(start, goal, h, coords, occupancy_grid, movement_type="8N")
-        path = np.array(path).reshape(-1, 2).transpose()
-        visitedNodes = np.array(visitedNodes).reshape(-1, 2).transpose()
-
-        # Displaying the map
-        fig_astar, ax_astar = create_empty_plot(max_val)
-        ax_astar.imshow(occupancy_grid.transpose(), cmap=cmap)
-
-        # Plot the best path found and the list of visited nodes
-        ax_astar.scatter(visitedNodes[0], visitedNodes[1], marker="o", color = 'orange');
-        ax_astar.plot(path[0], path[1], marker="o", color = 'blue');
-        ax_astar.scatter(start[0], start[1], marker="o", color = 'green', s=200);
-        ax_astar.scatter(goal[0], goal[1], marker="o", color = 'purple', s=200);
     """
-
-    # -----------------------------------------
-    # DO NOT EDIT THIS PORTION OF CODE
-    # -----------------------------------------
+    x, y = np.mgrid[0:45:1, 0:42:1]
+    pos = np.empty(x.shape + (2,))
+    # x.shape = (45,42)
+    # x.shape + (2,) = (45,42,2)
+    pos[:, :, 0] = x;
+    pos[:, :, 1] = y
+    # pos.shape = (1890, 2)
+    pos = np.reshape(pos, (x.shape[0] * x.shape[1], 2))
+    coords = list([(int(x[0]), int(x[1])) for x in pos])
+    # Define the heuristic:
+    # h: dictionary containing the distance to goal ignoring obstacles for all coordinates in the grid (heuristic function)
+    h = np.linalg.norm(pos - goal, axis=1)
+    # If axis is an integer, it specifies the axis of x along which to compute the vector norms
+    # axis = 1: h.shape  = 1890
+    # axis = 0: h.shape  = 2
+    h = dict(zip(coords, h))
 
     # Check if the start and goal are within the boundaries of the map
     for point in [start, goal]:
-        for coord in point:
-            assert coord >= 0 and coord < max_val, "start or end goal not contained in the map"
+
+        if point[0] < 0 and point[0] >= final_occupancy_grid.shape[0]:
+            raise Exception('Start node/goal node is not contained in the map')
+
+        if point[1] < 0 and point[1] >= final_occupancy_grid.shape[1]:
+            raise Exception('Start node/goal node is not contained in the map')
 
     # check if start and goal nodes correspond to free spaces
-    if occupancy_grid[start[0], start[1]]:
+    if final_occupancy_grid[start[0], start[1]]:
         raise Exception('Start node is not traversable')
 
-    if occupancy_grid[goal[0], goal[1]]:
+    if final_occupancy_grid[goal[0], goal[1]]:
         raise Exception('Goal node is not traversable')
 
-    # get the possible movements corresponding to the selected connectivity
-    if movement_type == '4N':
-        movements = _get_movements_4n()
-    elif movement_type == '8N':
-        movements = _get_movements_8n()
-    else:
-        raise ValueError('Unknown movement')
-
-    # --------------------------------------------------------------------------------------------
-    # A* Algorithm implementation - feel free to change the structure / use another pseudo-code
-    # --------------------------------------------------------------------------------------------
+    # get the possible movements
+    movements = get_movements_8n()
 
     # The set of visited nodes that need to be (re-)expanded, i.e. for which the neighbors need to be explored
     # Initially, only the start node is known.
@@ -125,7 +116,7 @@ def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", max_val=m
 
         # If the goal is reached, reconstruct and return the obtained path
         if current == goal:
-            return reconstruct_path(cameFrom, current), closedSet
+            return reconstruct_path(cameFrom, current)
 
         openSet.remove(current)
         closedSet.append(current)
@@ -136,14 +127,17 @@ def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", max_val=m
             neighbor = (current[0] + dx, current[1] + dy)
 
             # if the node is not in the map, skip
-            if (neighbor[0] >= occupancy_grid.shape[0]) or (neighbor[1] >= occupancy_grid.shape[1]) or (
+            if (neighbor[0] >= final_occupancy_grid.shape[0]) or (neighbor[1] >= final_occupancy_grid.shape[1]) or (
                     neighbor[0] < 0) or (neighbor[1] < 0):
                 continue
 
-            # if the node is occupied or has already been visited, skip
-            if (occupancy_grid[neighbor[0], neighbor[1]]) or (neighbor in closedSet):
+            # if the node is occupied, skip
+            if (final_occupancy_grid[neighbor[0], neighbor[1]]):
                 continue
 
+            # if the has already been visited, skip
+            if (neighbor in closedSet):
+                continue
             # d(current,neighbor) is the weight of the edge from current to neighbor
             # tentative_gScore is the distance from start to the neighbor through current
             tentative_gScore = gScore[current] + deltacost

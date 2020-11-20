@@ -34,6 +34,7 @@ def main():
 
     # MotionTuning(thymio=th, distance=15, angle=180.0)
     EventHandler(th, interval_check=0.1)  # check every interval_check seconds to change scenarios
+
     print("END OF MAIN!")
 
 
