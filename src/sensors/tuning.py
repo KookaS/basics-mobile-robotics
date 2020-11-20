@@ -44,6 +44,5 @@ class SensorTuning:
     """
 
     """
-
     def __init__(self, thymio: Thymio):
         self.thymio = thymio
