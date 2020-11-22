@@ -213,23 +213,24 @@ def display_global_path(start, goal, path, occupancy_grid):
     plt.show()
 
 
-def display_occupancy():
+def create_grid():
     occupancy_grid = create_occupancy_grid()
     # display_map(occupancy_grid.transpose(), OCCUPANCY)
 
-    localization_grid = create_localization_grid()
+    # localization_grid = create_localization_grid()
     # display_map(localization_grid, LOCALIZATION)
 
     final_occupancy_grid = increased_obstacles_map(occupancy_grid)
     # display_map(occupancy_grid.transpose(), OCCUPANCY)
     # display_map(final_occupancy_grid.transpose(), OCCUPANCY)
+    return final_occupancy_grid
 
-    # Define the start and end goal
-    start = (5, 5)
+
+def display_occupancy(final_occupancy_grid, position):
     goal = (35, 15)
 
     # Run the A* algorithm
-    path = A_Star(start, goal, final_occupancy_grid)
+    path = A_Star(position, goal, final_occupancy_grid)
     path = np.array(path).reshape(-1, 2).transpose()
-    display_global_path(start, goal, path, final_occupancy_grid.transpose())
+    display_global_path(position, goal, path, final_occupancy_grid.transpose())
     return path

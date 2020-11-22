@@ -7,7 +7,7 @@ from enum import Enum
 from src.displacement.movement import stop, rotate
 from src.displacement.planning import update_path
 from src.local_avoidance.obstacle import ObstacleAvoidance
-from src.path_planning.occupancy import display_occupancy
+from src.path_planning.occupancy import display_occupancy, create_grid
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from src.vision.kalman import detect_object
@@ -46,6 +46,7 @@ class EventHandler:
         """
         Initialize the thread for checking scenarios, then pause it until next call.
         """
+        self.final_occupancy_grid = create_grid()
         threading.Timer(self.interval_check, self.__check_handler).start()
         """
         self.state = EventEnum.KALMAN.value
@@ -98,7 +99,9 @@ class EventHandler:
         This function is called on it's own thread every interval_sleep seconds.
         """
         # print("inside __global_handler")
-        path = display_occupancy()
+        # TODO: give actual position
+        self.position = (2, 2)
+        path = display_occupancy(self.final_occupancy_grid, self.position)
         update_path(self.thymio, path)
 
         # self.running[EventEnum.KALMAN.value] = False    # stop kalman when we reached goal
@@ -111,8 +114,10 @@ class EventHandler:
         Manages the thread for the LOCAL scenario.
         This function is called on it's own thread every interval_sleep seconds.
         """
+        # TODO: give actual position
         print("before ObstacleAvoidance")
-        ObstacleAvoidance(self.thymio, distance_avoidance=8.0)
+        self.position = (2, 2)
+        ObstacleAvoidance(self.thymio, self.final_occupancy_grid, self.position, distance_avoidance=8.0)
         print("after ObstacleAvoidance")
         threading.Timer(self.interval_check, self.__check_handler).start()  # restart checking the correct state
 

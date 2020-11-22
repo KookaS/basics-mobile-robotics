@@ -45,7 +45,7 @@ def path_to_command_thymio(path):
 # this code gives a sequence of RIGHT; LEFT; STRAIGHT commands corresponding to the entire global path planning
 # i.e to go from the start to the goal
 
-def update_path(thymio: Thymio, path):
+def update_path(thymio: Thymio, path, interval_sleep=0.2):
     new_path = path
     for i in range(len(path[0]) - 1):
 
@@ -55,28 +55,28 @@ def update_path(thymio: Thymio, path):
             # turn 45 degrees to the right
             timer = rotate(thymio, -45.0)
             while timer.is_alive():
-                time.sleep(0.2)
+                time.sleep(interval_sleep)
 
             # move forward by the length of the diagonal of a square : 3.4cm
             timer = advance(thymio, 3.4)
             while timer.is_alive():
-                time.sleep(0.2)
+                time.sleep(interval_sleep)
 
         if turn == EventEnum.LEFT:
             # turn 45 degrees to the left
             thread = rotate(thymio, 45.0)
             while thread.is_alive():
-                time.sleep(0.2)
+                time.sleep(interval_sleep)
 
             # move forward by the length of the diagonal of a square : 3.4cm
             timer = advance(thymio, 3.4)
             while timer.is_alive():
-                time.sleep(0.2)
+                time.sleep(interval_sleep)
 
         if turn == EventEnum.STRAIGHT:
             # move forward by the length of the side of a square : 2.5cm
             timer = advance(thymio, 2.5)
             while timer.is_alive():
-                time.sleep(0.2)
+                time.sleep(interval_sleep)
 
         print(turn.name)
