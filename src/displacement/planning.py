@@ -1,33 +1,41 @@
+import time
+from enum import Enum
+
 import numpy as np
 
+from src.displacement.movement import rotate, advance
 from src.thymio.Thymio import Thymio
 
-RIGHT = 0
-LEFT = 1
-STRAIGHT = 2
+
+class EventEnum(Enum):
+    """
+    This is a class based on enumeration to define constants in a clean way.
+    """
+    RIGHT = 0
+    LEFT = 1
+    STRAIGHT = 2
 
 
 def path_to_command_thymio(path):
     current_x = path[0][0]
     current_y = path[1][0]
-
     next_x = path[0][1]
     next_y = path[1][1]
 
     # next-prev
-    delta_x = path[0][1] - path[0][0]
-    delta_y = path[1][1] - path[1][0]
+    delta_x = next_x - current_x
+    delta_y = next_y - current_y
 
-    # delat_x = 0 and delta_y = -/+ 1 (or delat_x = -/+ 1 and delta_y = 0): go straight
-    turn = STRAIGHT
+    # delta_x = 0 and delta_y = -/+ 1 (or delta_x = -/+ 1 and delta_y = 0): go straight
+    turn = EventEnum.STRAIGHT
 
-    # delat_x = -1 and delta_y = 1 (or delat_x = 1 and delta_y = -1): turn to the right
+    # delta_x = -1 and delta_y = 1 (or delta_x = 1 and delta_y = -1): turn to the right
     if delta_x * delta_y < 0:
-        turn = RIGHT
+        turn = EventEnum.RIGHT
 
-    # delat_x = -1 and delta_y = -1 (or delat_x = 1 and delta_y = 1): turn to the left
+    # delta_x = -1 and delta_y = -1 (or delta_x = 1 and delta_y = 1): turn to the left
     if delta_x * delta_y == 1:
-        turn = LEFT
+        turn = EventEnum.LEFT
 
     new_path = np.array([path[0][1:], path[1][1:]])
 
@@ -43,36 +51,32 @@ def update_path(thymio: Thymio, path):
 
         turn, new_path = path_to_command_thymio(new_path)
 
-        if turn == RIGHT:
+        if turn == EventEnum.RIGHT:
             # turn 45 degrees to the right
-            # --------------------------------------
-            #           ADD CODE HERE
-            # --------------------------------------
-            #
-            timer = 0
+            timer = rotate(thymio, -45.0)
+            while timer.is_alive():
+                time.sleep(0.2)
 
-            # move forward by the length of the diagonal of a square : 3cm?
-            # --------------------------------------
-            #           ADD CODE HERE
-            # --------------------------------------
+            # move forward by the length of the diagonal of a square : 3.4cm
+            timer = advance(thymio, 3.4)
+            while timer.is_alive():
+                time.sleep(0.2)
 
-        if turn == LEFT:
+        if turn == EventEnum.LEFT:
             # turn 45 degrees to the left
-            # --------------------------------------
-            #           ADD CODE HERE
-            # --------------------------------------
-            #
-            # move forward by the length of the diagonal of a square : 3cm?
-            # --------------------------------------
-            #           ADD CODE HERE
-            # --------------------------------------
-            timer = 0
+            thread = rotate(thymio, 45.0)
+            while thread.is_alive():
+                time.sleep(0.2)
 
-        if turn == STRAIGHT:
-            # move forward by the length of the side of a square : 2cm?
-            # --------------------------------------
-            #           ADD CODE HERE
-            # --------------------------------------
-            timer = 0
+            # move forward by the length of the diagonal of a square : 3.4cm
+            timer = advance(thymio, 3.4)
+            while timer.is_alive():
+                time.sleep(0.2)
 
-        print(turn)
+        if turn == EventEnum.STRAIGHT:
+            # move forward by the length of the side of a square : 2.5cm
+            timer = advance(thymio, 2.5)
+            while timer.is_alive():
+                time.sleep(0.2)
+
+        print(turn.name)

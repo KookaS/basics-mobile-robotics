@@ -7,29 +7,28 @@ from threading import Timer
 load_dotenv()
 
 
-def move(thymio: Thymio, l_speed: int = 100, r_speed: int = 100, verbose: bool = False):
+def move(thymio: Thymio, l_speed_ratio: int = 1, r_speed_ratio: int = 1, verbose: bool = False):
     """
     Move the robot's wheels correctly. Manages the negative speed well.
     Once this function is called the robot will continue forever if no further implementation is used.
     Wrap this function to set the conditions for moving.
 
     :param thymio:      the class to which the robot is referred to
-    :param r_speed:     left speed
-    :param l_speed:     right speed
+    :param r_speed_ratio:     left speed
+    :param l_speed_ratio:     right speed
     :param verbose:     printing the speed in the terminal
     """
+    # Changing negative values to the expected ones with the bitwise complement
+    l_speed = int(l_speed_ratio * int(os.getenv("LEFT_WHEEL_SCALING")))
+    l_speed = l_speed if l_speed >= 0 else 2 ** 16 + l_speed
+    r_speed = int(r_speed_ratio * int(os.getenv("RIGHT_WHEEL_SCALING")))
+    r_speed = r_speed if r_speed >= 0 else 2 ** 16 + r_speed
+    thymio.set_var("motor.left.target", l_speed)
+    thymio.set_var("motor.right.target", r_speed)
 
     # Printing the speeds if requested
     if verbose:
         print("\t\t Setting speed : ", l_speed, r_speed)
-
-    # Changing negative values to the expected ones with the bitwise complement
-    l_speed = int(l_speed * int(os.getenv("LEFT_WHEEL_SCALING")) / 100)
-    l_speed = l_speed if l_speed >= 0 else 2 ** 16 + l_speed
-    r_speed = int(r_speed * int(os.getenv("RIGHT_WHEEL_SCALING")) / 100)
-    r_speed = r_speed if r_speed >= 0 else 2 ** 16 + r_speed
-    thymio.set_var("motor.left.target", l_speed)
-    thymio.set_var("motor.right.target", r_speed)
 
 
 def stop(thymio: Thymio, verbose=False):
@@ -49,7 +48,7 @@ def stop(thymio: Thymio, verbose=False):
 
 def rotate(thymio: Thymio, angle: float, verbose: bool = False, function=stop, args=None, kwargs=None):
     """
-    Rotates the coordinates of a matrix by the desired angle
+    Rotates of the desired angle
 
     :param function:    function to execute at the end of rotation, default stop
     :param args:        array of non-keyworded arguments of function
@@ -61,8 +60,8 @@ def rotate(thymio: Thymio, angle: float, verbose: bool = False, function=stop, a
     """
     args_f = args if args is not None else [thymio]
     kwargs_f = kwargs if kwargs is not None else {}
-    l_speed = int(os.getenv("LEFT_WHEEL_SCALING")) * int(np.sign(angle))
-    r_speed = -int(os.getenv("RIGHT_WHEEL_SCALING")) * int(np.sign(angle))
+    l_speed = -int(np.sign(angle))
+    r_speed = int(np.sign(angle))
     turn_time = float(os.getenv("HALF_TURN_TIME")) * angle / 180.0
 
     # Printing the speeds if requested
@@ -75,25 +74,25 @@ def rotate(thymio: Thymio, angle: float, verbose: bool = False, function=stop, a
     return timer
 
 
-def advance(thymio: Thymio, distance: float, speed: int = 1, verbose: bool = False, function=stop, args=None,
+def advance(thymio: Thymio, distance: float, speed_ratio: int = 1, verbose: bool = False, function=stop, args=None,
             kwargs=None):
     """
-    Rotates the coordinates of a matrix by the desired angle
+    Moves straight of a desired distance
 
     :param kwargs:      function to execute at the end of advancing, default stop
     :param args:        array of non-keyworded arguments of function
     :param function:    set of keyworded arguments
     :param thymio:      the class to which the robot is referred to
     :param distance:    distance in cm by which we want to move, positive or negative
-    :param speed:       the speed factor at which the robot goes
+    :param speed_ratio:       the speed factor at which the robot goes
     :param verbose:     printing the speed in the terminal
     :return: timer to check if it is still alive or not
     """
     args_f = args if args is not None else [thymio]
     kwargs_f = kwargs if kwargs is not None else {}
-    l_speed = speed * int(os.getenv("LEFT_WHEEL_SCALING")) * int(np.sign(distance))
-    r_speed = speed * int(os.getenv("RIGHT_WHEEL_SCALING")) * int(np.sign(distance))
-    distance_time = float(os.getenv("DISTANCE_TIME")) * distance / speed
+    l_speed = speed_ratio * int(np.sign(distance))
+    r_speed = speed_ratio * int(np.sign(distance))
+    distance_time = float(os.getenv("DISTANCE_TIME")) * distance / speed_ratio
 
     # Printing the speeds if requested
     if verbose:

@@ -4,7 +4,7 @@ import time
 import numpy as np
 from enum import Enum
 
-from src.displacement.movement import stop
+from src.displacement.movement import stop, rotate
 from src.displacement.planning import update_path
 from src.local_avoidance.obstacle import ObstacleAvoidance
 from src.path_planning.occupancy import display_occupancy
@@ -63,7 +63,7 @@ class EventHandler:
         """
         # print(threading.active_count())
         sensor_values = self.sensor_handler.sensor_raw()
-        print(sensor_values)
+        # print(sensor_values)
 
         sensor = np.amax(sensor_values["sensor"]).astype(int)  # RANDOM CONDITION FOR TESTING
         if self.state != EventEnum.GLOBAL.value and sensor <= self.obstacle_threshold:  # CHECK HERE FOR THE GLOBAL CONDITION
@@ -88,7 +88,8 @@ class EventHandler:
             self.state = EventEnum.STOP.value
             threading.Timer(self.interval_sleep, self.__stop_handler).start()
 
-        threading.Timer(self.interval_check, self.__check_handler).start()
+        time.sleep(self.interval_sleep)
+        self.__check_handler()
         return
 
     def __global_handler(self):
@@ -99,6 +100,11 @@ class EventHandler:
         # print("inside __global_handler")
         path = display_occupancy()
         update_path(self.thymio, path)
+
+        # self.running[EventEnum.KALMAN.value] = False    # stop kalman when we reached goal
+        self.state = EventEnum.STOP.value
+        self.running[EventEnum.STOP.value] = True
+        self.__stop_handler()
 
     def __local_handler(self):
         """
