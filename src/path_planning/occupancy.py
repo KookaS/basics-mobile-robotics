@@ -51,7 +51,6 @@ def display_map(grid, type_map):
         ax.imshow(grid, cmap=cmap, extent=[0, 42, 0, 45])
         plt.title("Localization grid")
 
-    plt.show()
     return fig, ax
 
 
@@ -211,6 +210,7 @@ def display_global_path(start, goal, path, occupancy_grid):
     ax_astar.scatter(start[0], start[1], marker="o", color='green', s=200)
     ax_astar.scatter(goal[0], goal[1], marker="o", color='purple', s=200)
     ax_astar.set_ylim(ax_astar.get_ylim()[::-1])
+    plt.show()
 
 
 def display_occupancy():
@@ -223,10 +223,13 @@ def display_occupancy():
     final_occupancy_grid = increased_obstacles_map(occupancy_grid)
     # display_map(occupancy_grid.transpose(), OCCUPANCY)
     # display_map(final_occupancy_grid.transpose(), OCCUPANCY)
+
     # Define the start and end goal
-    start = (26, 5)
-    goal = (3, 26)
+    start = (5, 5)
+    goal = (35, 15)
+
     # Run the A* algorithm
     path = A_Star(start, goal, final_occupancy_grid)
     path = np.array(path).reshape(-1, 2).transpose()
     display_global_path(start, goal, path, final_occupancy_grid.transpose())
+    return path
