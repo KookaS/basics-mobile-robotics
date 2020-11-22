@@ -153,4 +153,6 @@ def A_Star(start, goal, final_occupancy_grid):
 
     # Open set is empty but goal was never reached
     print("No path found to goal")
-    return [], closedSet
+
+    new_closedSet = np.array([closedSet[0][1:], closedSet[1][1:]]) # closed set without the origin
+    return [], new_closedSet

@@ -1,82 +1,32 @@
-import time
-from enum import Enum
-
 import numpy as np
 
 from src.displacement.movement import rotate, advance
 from src.thymio.Thymio import Thymio
 
 
-class EventEnum(Enum):
-    """
-    This is a class based on enumeration to define constants in a clean way.
-    """
-    RIGHT = 0
-    LEFT = 1
-    STRAIGHT = 2
-
-
-def path_to_command_thymio(path):
-    current_x = path[0][0]
-    current_y = path[1][0]
-    next_x = path[0][1]
-    next_y = path[1][1]
-
-    # next-prev
-    delta_x = next_x - current_x
-    delta_y = next_y - current_y
-
-    # delta_x = 0 and delta_y = -/+ 1 (or delta_x = -/+ 1 and delta_y = 0): go straight
-    turn = EventEnum.STRAIGHT
-
-    # delta_x = -1 and delta_y = 1 (or delta_x = 1 and delta_y = -1): turn to the right
-    if delta_x * delta_y < 0:
-        turn = EventEnum.RIGHT
-
-    # delta_x = -1 and delta_y = -1 (or delta_x = 1 and delta_y = 1): turn to the left
-    if delta_x * delta_y == 1:
-        turn = EventEnum.LEFT
-
-    new_path = np.array([path[0][1:], path[1][1:]])
-
-    return turn, new_path
-
-
-# this code gives a sequence of RIGHT; LEFT; STRAIGHT commands corresponding to the entire global path planning
+# this code do a sequence of  displacement corresponding to the entire global path planning
 # i.e to go from the start to the goal
 
-def update_path(thymio: Thymio, path, interval_sleep=0.2):
-    new_path = path
+def update_path(thymio: Thymio, path, x, y, theta):
+    CONST_DISP = 2.5  # distance in cm between two squares
     for i in range(len(path[0]) - 1):
+        target_x = path[0][0]
+        target_y = path[1][0]
 
-        turn, new_path = path_to_command_thymio(new_path)
+        # Relative displacements to target
+        delta_x = target_x - x
+        delta_x_cm = delta_x * CONST_DISP
+        delta_y = target_y - y
+        delta_y_cm = delta_y * CONST_DISP
+        delta_r = np.sqrt(delta_x_cm ** 2 + delta_y_cm ** 2)
 
-        if turn == EventEnum.RIGHT:
-            # turn 45 degrees to the right
-            timer = rotate(thymio, -45.0)
-            while timer.is_alive():
-                time.sleep(interval_sleep)
+        # Relative rotation to target
+        target_theta_rad = np.arctan2(delta_y_cm, delta_x_cm)
+        target_theta_deg = np.rad2deg(target_theta_rad)
+        target_theta_deg = np.abs(target_theta_deg) * np.sign(delta_x)
+        delta_theta = target_theta_deg - theta
+        delta_theta = (delta_theta + np.pi) % (2 * np.pi) - np.pi
 
-            # move forward by the length of the diagonal of a square : 3.4cm
-            timer = advance(thymio, 3.4)
-            while timer.is_alive():
-                time.sleep(interval_sleep)
-
-        if turn == EventEnum.LEFT:
-            # turn 45 degrees to the left
-            thread = rotate(thymio, 45.0)
-            while thread.is_alive():
-                time.sleep(interval_sleep)
-
-            # move forward by the length of the diagonal of a square : 3.4cm
-            timer = advance(thymio, 3.4)
-            while timer.is_alive():
-                time.sleep(interval_sleep)
-
-        if turn == EventEnum.STRAIGHT:
-            # move forward by the length of the side of a square : 2.5cm
-            timer = advance(thymio, 2.5)
-            while timer.is_alive():
-                time.sleep(interval_sleep)
-
-        print(turn.name)
+        # Apply rotation, then displacement
+        rotate(thymio, delta_theta)
+        advance(thymio, delta_r)
