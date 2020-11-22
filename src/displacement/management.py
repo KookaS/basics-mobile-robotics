@@ -100,9 +100,9 @@ class EventHandler:
         """
         # print("inside __global_handler")
         # TODO: give actual position
-        self.position = (2, 2)
-        path = display_occupancy(self.final_occupancy_grid, self.position)
-        update_path(self.thymio, path)
+        self.position = (2, 2, -30.0)
+        # path = display_occupancy(self.final_occupancy_grid, self.position)
+        # update_path(self.thymio, path)
 
         # self.running[EventEnum.KALMAN.value] = False    # stop kalman when we reached goal
         self.state = EventEnum.STOP.value
@@ -115,10 +115,8 @@ class EventHandler:
         This function is called on it's own thread every interval_sleep seconds.
         """
         # TODO: give actual position
-        print("before ObstacleAvoidance")
-        self.position = (2, 2)
-        ObstacleAvoidance(self.thymio, self.final_occupancy_grid, self.position, distance_avoidance=8.0)
-        print("after ObstacleAvoidance")
+        self.position = (2, 2, -30.0)
+        ObstacleAvoidance(self.thymio, self.final_occupancy_grid, self.position)
         threading.Timer(self.interval_check, self.__check_handler).start()  # restart checking the correct state
 
         self.state = EventEnum.STOP.value
