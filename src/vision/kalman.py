@@ -56,7 +56,7 @@ def detect_ball(frame):
         return [X, Y]
 
 
-def detect_object():
+def detect_object(frame):
     cap = cv.VideoCapture(0)
 
     width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))

@@ -56,6 +56,12 @@ Here is the list of packages to install:
 
     pyserial python-dotenv opencv-python tqdm matplotlib numpy ipywidgets
     
+on linux:
+
+    pip install -U python-dotenv
+    
+    https://linuxize.com/post/how-to-install-opencv-on-ubuntu-18-04/
+    
 ### Branches
 
 You need everytime you code that you are in an other branch than the main one, especially if you commit and push your code.
@@ -118,7 +124,7 @@ Create a .env and make sure not to commit and push it
 
 This is a way to store locally variables that can be used in the project, variables that may be different for everyone
 
-    COM_PORT="\\.\COM9"
+    COM_PORT="\\.\COM9"     "/dev/ttyACM0"
     LEFT_WHEEL_SCALING=99
     RIGHT_WHEEL_SCALING=100
     HALF_TURN_TIME=4.72

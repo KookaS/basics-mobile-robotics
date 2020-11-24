@@ -6,6 +6,8 @@ import numpy as np
 import math
 from matplotlib import colors
 
+from src.vision.camera import detect_and_rotate
+
 
 def test_ground_white(thymio: Thymio, white_threshold: int, verbose: bool = False):
     """
@@ -59,71 +61,6 @@ class Localization:
         # shapren parameter
         self.alpha = 1.5  # Contrast control (1.0-3.0)
         self.beta = 0  # Brightness control (0-100)
-
-    def detect_and_rotate(self, image):
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
-        # hsv value for the various mask
-        lower_blue = np.array([110, 50, 50])
-        upper_blue = np.array([132, 255, 255])
-        low_green = np.array([36, 0, 0])
-        up_green = np.array([86, 255, 255])
-        low_red = np.array([178, 179, 0])
-        up_red = np.array([[255, 255, 255]])
-
-        # computing of the blue mask to isolate the contours of the map
-        mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
-        # find the outside blue contours of the map on the whole world
-        contours, _ = cv2.findContours(mask_blue, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
-
-        # find the rectangle which includes the contours
-        max_area = 0
-        best = None
-        for contour in contours:
-            area = cv2.contourArea(contour)
-            if area > max_area:
-                max_area = area
-                best = contour
-
-        rect = cv2.minAreaRect(best)
-        box = cv2.boxPoints(rect)
-        box = np.int0(box)
-
-        # crop image inside bounding box
-        scale = 1
-        W = rect[1][0]
-        H = rect[1][1]
-
-        # finding the box to rotate
-        Xs = [i[0] for i in box]
-        Ys = [i[1] for i in box]
-        x1 = min(Xs)
-        x2 = max(Xs)
-        y1 = min(Ys)
-        y2 = max(Ys)
-
-        # finding the rotation angle
-        angle = rect[2]
-        rotated = False
-        if angle < -45:
-            angle += 90
-            rotated = True
-
-        # rotation center and rotation matrix
-        center = (int((x1 + x2) / 2), int((y1 + y2) / 2))
-        size = (int(scale * (x2 - x1)), int(scale * (y2 - y1)))
-        M = cv2.getRotationMatrix2D((size[0] / 2, size[1] / 2), angle, 1.0)
-
-        # cropping the image and rotating it
-        cropped = cv2.getRectSubPix(image, size, center)
-        cropped = cv2.warpAffine(cropped, M, size)
-        croppedW = W if not rotated else H
-        croppedH = H if not rotated else W
-
-        corrected = cv2.getRectSubPix(cropped, (int(croppedW * scale), int(croppedH * scale)),
-                                      (size[0] / 2, size[1] / 2))
-        final_grid = np.array(corrected)
-        return final_grid
 
     def resize(self, final_grid, alpha, beta):
         adjusted = cv2.convertScaleAbs(final_grid, alpha, beta)
@@ -192,7 +129,7 @@ class Localization:
         return object_grid, occupancy_grid
 
     def vision(self, image):
-        final_grid = self.detect_and_rotate(image)
+        final_grid = detect_and_rotate(image)
         vis_map = self.resize(final_grid, self.alpha, self.beta)
         world = self.rotate(vis_map)
         object_grid, occupancy_grid = self.detect_object(world)

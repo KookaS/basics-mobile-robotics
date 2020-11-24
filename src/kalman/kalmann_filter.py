@@ -94,7 +94,7 @@ def plot_covariance_ellipse(state_est, cov_est):
     return px, py
 
 
-def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl, condition):
+def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
     """
     Estimates the current state using input sensor data and the previous state
 
@@ -107,6 +107,9 @@ def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl, condition
     return state_est: new a posteriori state estimation
     return cov_est: new a posteriori state covariance
     """
+    condition = True
+    if z[0, 0] != -1 and z[1, 0] != -1:
+        condition = False
 
     theta = state_est_prev[2, 0]
     delta_s = (delta_sr + delta_sl) / 2
