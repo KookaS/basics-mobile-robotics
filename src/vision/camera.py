@@ -1,8 +1,39 @@
 # le mieux avec un mask bleu
 import math
+import os
 
 import cv2
 import numpy as np
+from dotenv import load_dotenv
+
+load_dotenv()
+
+"""
+"""
+low_green = np.array([36, 25, 25])
+up_green = np.array([102, 255, 255])
+low_yellow = np.array([20, 60, 60])
+up_yellow = np.array([70, 255, 255])
+low_red = np.array([178, 179, 0])
+up_red = np.array([[255, 255, 255]])
+low_blue = np.array([110, 50, 50])
+up_blue = np.array([132, 255, 255])
+
+"""
+# new
+low_green = np.array([40, 50, 50])
+up_green = np.array([60, 255, 255])
+low_yellow = np.array([20, 60, 60])
+up_yellow = np.array([70, 255, 255])
+"""
+
+"""
+# original
+low_green = np.array([36, 25, 25])
+up_green = np.array([102, 255, 255])
+low_yellow = np.array([20, 100, 100])
+up_yellow = np.array([30, 255, 255])
+"""
 
 
 def record_project():
@@ -10,7 +41,7 @@ def record_project():
     gW = 47
     gH = 44
 
-    filename = "0"     # TODO Port camera "0"
+    filename = int(os.getenv("CAMERA_PORT"))
 
     # open the video and save the frame and return the fW,fH and the frame
     fW, fH, frame = video_handle(filename)
@@ -21,6 +52,8 @@ def record_project():
     # detect both yellow and green square for further angle and center computation
     x2g, y2g, frameg = frame_analysis_green(fW, fH, image, gW, gH)
     x2y, y2y, framey = frame_analysis_yellow(fW, fH, image, gW, gH)
+    print("x2g, y2g", x2g, y2g)
+    print("x2y, y2y", x2y, y2y)
 
     # compute the center of the thymio & gives thymio angle
     x2 = (x2g + x2y) / 2
@@ -31,8 +64,8 @@ def record_project():
     # plt.figure()
     # plt.imshow(image[:,:,::-1])
     # plt.show()
-    print('X', x2, 'Y', y2)
-    print('Angle', angle)
+    # print('X', x2, 'Y', y2)
+    # print('Angle', angle)
     return [x2, y2, -angle]
 
 
@@ -41,13 +74,7 @@ def frame_analysis_green(fW, fH, frame, gW, gH):
 
     cam_grid_ratio = (gW / fW, gH / fH)
 
-    low_green = np.array([36, 0, 0])
-    up_green = np.array([86, 255, 255])
-
-    low_blue = np.array([110, 50, 50])
-    up_blue = np.array([132, 255, 255])
-
-    hsv = cv2.cv2tColor(frame, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     mask = cv2.inRange(hsv, low_green, up_green)
     res = cv2.bitwise_and(frame, frame, mask=mask)
@@ -89,7 +116,7 @@ def frame_analysis_green(fW, fH, frame, gW, gH):
     return x2, y2, frame
 
 
-#open the video and save the frame and return the fW,fH and the frame
+# open the video and save the frame and return the fW,fH and the frame
 
 def video_handle(filename):
     cap = cv2.VideoCapture(filename)
@@ -97,12 +124,11 @@ def video_handle(filename):
     fW = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     fH = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    low_blue = np.array([110,50,50])
-    up_blue = np.array([132,255,255])
 
     _, frame = cap.read()
+    print(frame)
     cap.release()
-    return fW,fH,frame
+    return fW, fH, frame
 
 
 def frame_analysis_yellow(fW, fH, frame, gW, gH):
@@ -110,9 +136,7 @@ def frame_analysis_yellow(fW, fH, frame, gW, gH):
 
     cam_grid_ratio = (gW / fW, gH / fH)
 
-    low_yellow = np.array([20, 100, 100])
-    up_yellow = np.array([30, 255, 255])
-    hsv = cv2.cv2tColor(frame, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, low_yellow, up_yellow)
     res = cv2.bitwise_and(frame, frame, mask=mask)
 
@@ -179,11 +203,9 @@ def give_thymio_angle(image, xcy, ycy, xcg, ycg):
 
 # detect the blue square and resize the frame
 def detect_and_rotate(image):
-    hsv = cv2.cv2tColor(image, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # hsv value for the various mask
-    low_blue = np.array([110, 50, 50])
-    up_blue = np.array([132, 255, 255])
 
     # computing of the blue mask to isolate the contours of the map
     mask_blue = cv2.inRange(hsv, low_blue, up_blue)
@@ -196,6 +218,10 @@ def detect_and_rotate(image):
     best = None
     for contour in contours:
         area = cv2.contourArea(contour)
+        """        
+        if len(area) < 1:
+        return np.array(image)
+        """
         if area > maxArea:
             maxArea = area
             best = contour
@@ -240,12 +266,8 @@ def detect_and_rotate(image):
     return final_grid
 
 
-low_green = np.array([36,0,0])
-up_green = np.array([86,255,255])
-
 # Instantiate OCV2 kalman filter
 class KalmanFilter:
-
     kf = cv2.KalmanFilter(4, 2)
     kf.measurementMatrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0]], np.float32)
     kf.transitionMatrix = np.array([[1, 0, 1, 0], [0, 1, 0, 1], [0, 0, 1, 0], [0, 0, 0, 1]], np.float32)
@@ -276,7 +298,7 @@ class ProcessImage:
             rc, frame = cap.read()
 
             if (rc == True):
-                [X, Y] = self.DetectBall(frame)
+                [X, Y] = detect_ball(frame)
                 if X == -1 and Y == -1:
                     cv2.imshow('frame', frame)
                     # If "q" is pressed on the keyboard, exit this loop
@@ -290,14 +312,14 @@ class ProcessImage:
                     cv2.circle(frame, (int(X), int(Y)), 4, (0, 0, 255), -1)
                     cv2.line(frame, (int(X), int(Y)), (int(X + 50), int(Y + 20)), [100, 100, 255], 2, 8)
                     cv2.putText(frame, "Actual", (int(X + 50), int(Y + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                               [50, 200, 250])
+                                [50, 200, 250])
 
                     # Draw Kalman Filter Predicted output
                     cv2.circle(frame, (int(predictedCoords[0]), int(predictedCoords[1])), 4, (0, 255, 255), -1)
                     cv2.line(frame, (int(predictedCoords[0]), int(predictedCoords[1])),
-                            (int(predictedCoords[0]) + 50, int(predictedCoords[1]) - 30), [100, 10, 255], 2, 8)
+                             (int(predictedCoords[0]) + 50, int(predictedCoords[1]) - 30), [100, 10, 255], 2, 8)
                     cv2.putText(frame, "Predicted", (int(predictedCoords[0]) + 50, int(predictedCoords[1]) - 30),
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, [50, 200, 250])
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, [50, 200, 250])
                     cv2.imshow('frame', frame)
 
                     if (cv2.waitKey(300) & 0xFF == ord('q')):
@@ -310,34 +332,141 @@ class ProcessImage:
         cv2.destroyAllWindows()
 
     # Segment the green ball in a given frame
-def detect_ball(frame):
 
-        hsv = cv2.cv2tColor(frame, cv2.COLOR_BGR2HSV)
+
+def detect_ball(frame):
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, low_green, up_green)
+
+    # Dilate
+    kernel = np.ones((5, 5), np.uint8)
+    greenMaskDilated = cv2.dilate(mask, kernel)
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
+    areas = [cv2.contourArea(c) for c in contours]
+    if len(areas) < 1:
+        return [-1, -1]
+    else:
+        max_index = np.argmax(areas)
+
+        cnt = contours[max_index]
+
+        epsilon = 0.01 * cv2.arcLength(cnt, True)
+        approx = cv2.approxPolyDP(cnt, epsilon, True)
+        hull = cv2.convexHull(cnt, returnPoints=False)
+        cv2.drawContours(frame, [approx], -1, (255, 255, 255), 1)
+
+        x, y, w, h = cv2.boundingRect(cnt)
+        # cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),3)
+
+        # Draw circle in the center of the bounding box
+        X = x + int(w / 2)
+        Y = y + int(h / 2)
+        cv2.circle(frame, (X, Y), 4, (255, 255, 0), -1)
+
+        return [X, Y]
+
+
+def test_camera():
+    # i = 0 pour main webcam aka built in, 1 for first usb port etc
+    # cap = cv2.VideoCapture(i)
+
+    cap = cv2.VideoCapture(int(os.getenv("CAMERA_PORT")))
+
+    # cap = cv2.VideoCapture('test.mp4')
+    # cap = cv2.VideoCapture('test_video.mov')
+
+    fW = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    fH = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # Que QR code, a rajouter cadre + depassement
+    gW = 44
+    gH = 42
+    cam_grid_ratio = (gW / fW, gH / fH)
+
+    while (1):
+
+        _, frame = cap.read()
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, low_green, up_green)
 
-        # Dilate
-        kernel = np.ones((5, 5), np.uint8)
-        greenMaskDilated = cv2.dilate(mask, kernel)
+        # mask = cv2.inRange(hsv, low_green, up_green)
+        resg = cv2.bitwise_and(frame, frame, mask)
+
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
         areas = [cv2.contourArea(c) for c in contours]
-        if len(areas) < 1:
-            return [-1, -1]
+        if len(areas) < 5:
+
+            # Display the resulting frame
+            frame = cv2.resize(frame, (0, 0), None, 1, 1)
+            cv2.imshow('frame', frame)
+            # If "q" is pressed on the keyboard, exit this loop
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+
         else:
+
+            # Find the largest moving object in the image
             max_index = np.argmax(areas)
 
             cnt = contours[max_index]
-
-            epsilon = 0.01 * cv2.arcLength(cnt, True)
-            approx = cv2.approxPolyDP(cnt, epsilon, True)
-            hull = cv2.convexHull(cnt, returnPoints=False)
-            cv2.drawContours(frame, [approx], -1, (255, 255, 255), 1)
-
-            x, y, w, h = cv2.boundingRect(cnt)
-            # cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),3)
+            xg, yg, wg, hg = cv2.boundingRect(cnt)
 
             # Draw circle in the center of the bounding box
-            X = x + int(w / 2)
-            Y = y + int(h / 2)
-            cv2.circle(frame, (X, Y), 4, (255, 255, 0), -1)
 
-            return [X, Y]
+            mask = cv2.inRange(hsv, low_yellow, up_yellow)
+            resy = cv2.bitwise_and(frame, frame, mask)
+
+            contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
+            areas = [cv2.contourArea(c) for c in contours]
+            if len(areas) < 5:
+
+                # Display the resulting frame
+                frame = cv2.resize(frame, (0, 0), None, 1, 1)
+                cv2.imshow('frame', frame)
+                masky = cv2.inRange(hsv, low_yellow, up_yellow)
+                resy = cv2.bitwise_and(frame, frame, masky)
+                maskg = cv2.inRange(hsv, low_green, up_green)
+                resg = cv2.bitwise_and(frame, frame, maskg)
+                cv2.imshow('resg', maskg)
+                cv2.imshow('resy', masky)
+
+                # If "q" is pressed on the keyboard, exit this loop
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+            else:
+                max_index = np.argmax(areas)
+                cnt = contours[max_index]
+                xy, yy, wy, hy = cv2.boundingRect(cnt)
+
+                x2g = xg + int(wg / 2)
+                y2g = yg + int(hg / 2)
+                x2y = xy + int(wy / 2)
+                y2y = yy + int(hy / 2)
+                # cv2.circle(frame,(x2,y2),4,(255,255,0),-1)
+                x2 = int((x2g + x2y) / 2)
+                y2 = int((y2g + y2y) / 2)
+                text = "Robot center in map's squares"
+                cv2.putText(frame, text, (x2 - 120, y2 - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+                # int(x2*cam_grid_ratio[0])) is the x value in grid coord
+                # gH-int(y2*cam_grid_ratio[1]) is the y value in grid coord
+                text2 = "x: " + str(int(x2 * cam_grid_ratio[0])) + ", y: " + str(gH - int(y2 * cam_grid_ratio[1]))
+                cv2.putText(frame, text2, (x2 - 50, y2 + 20),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
+
+                cv2.circle(frame, (x2, y2), 4, (255, 255, 0), -1)
+
+                # frame = cv2.resize(frame, (0, 0), None, 0.5, 0.5)
+                cv2.imshow('frame', frame)
+                masky = cv2.inRange(hsv, low_yellow, up_yellow)
+                resy = cv2.bitwise_and(frame, frame, masky)
+                maskg = cv2.inRange(hsv, low_green, up_green)
+                resg = cv2.bitwise_and(frame, frame, maskg)
+                cv2.imshow('resg', maskg)
+                cv2.imshow('resy', masky)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+    cv2.destroyAllWindows()
+    cap.release()

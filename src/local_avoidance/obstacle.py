@@ -126,18 +126,19 @@ class ObstacleAvoidance:
 
     def __check_global_obstacles(self):
         obstacle = False
-        temp = (self.position[0], self.position[1])  # (x, y)
+        x = self.position[0]
+        y = self.position[1]
         while not obstacle:
             value = math.cos(math.radians(self.position[2]))
             if math.fabs(value) >= 0.5:
-                temp[0] += int(math.copysign(1.0, value))
+                x += int(math.copysign(1.0, value))
 
             value = math.sin(math.radians(self.position[2]))
             if math.fabs(value) >= 0.5:
-                temp[1] += int(math.copysign(1.0, value))
+                y += int(math.copysign(1.0, value))
 
-            if self.final_occupancy_grid[temp[0]][temp[1]] == 1:
+            if self.final_occupancy_grid[x][y] == 1:
                 obstacle = True
 
         return math.sqrt(
-            (self.position[0] - temp[0]) * self.square ** 2 + (self.position[1] - temp[1]) * self.square ** 2)
+            (self.position[0] - x) * self.square ** 2 + (self.position[1] - y) * self.square ** 2)
