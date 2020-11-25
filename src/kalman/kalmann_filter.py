@@ -108,10 +108,10 @@ def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
     return cov_est: new a posteriori state covariance
     """
     condition = True
-    if z[0, 0] != -1 and z[1, 0] != -1:
+    if z[0] != -1 and z[1] != -1:
         condition = False
 
-    theta = state_est_prev[2, 0]
+    theta = state_est_prev[2]
     delta_s = (delta_sr + delta_sl) / 2
     delta_theta = (delta_sr - delta_sl) / b
 
@@ -120,8 +120,8 @@ def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
 
     # Prediction step
     # estimated mean of the state
-    state_est_a_priori = state_est_prev + np.array(
-        [[delta_s * np.cos(theta + delta_theta / 2)], [delta_s * np.sin(theta + delta_theta / 2)], [delta_theta]])
+    state_est_a_priori = np.array(state_est_prev) + np.array(
+        [delta_s * np.cos(theta + delta_theta / 2), delta_s * np.sin(theta + delta_theta / 2), delta_theta])
 
     # Estimated covariance of the state
     cov_est_a_priori = np.dot(Fx, np.dot(cov_est_prev, Fx.T)) + np.dot(Fu, np.dot(R, Fu.T))
