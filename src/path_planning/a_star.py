@@ -1,6 +1,7 @@
 import numpy as np
 import math
-
+LENGTH = 32
+WIDTH = 29
 
 def reconstruct_path(cameFrom, current):
     """
@@ -52,10 +53,10 @@ def A_Star(start, goal, final_occupancy_grid):
     :param occupancy_grid: the grid map
     :return: a tuple that contains: (the resulting path in meters, the resulting path in data array indices)
     """
-    x, y = np.mgrid[0:45:1, 0:42:1]
+    x, y = np.mgrid[0:LENGTH:1, 0:WIDTH:1]
     pos = np.empty(x.shape + (2,))
-    # x.shape = (45,42)
-    # x.shape + (2,) = (45,42,2)
+    # x.shape = (LENGTH,WIDTH)
+    # x.shape + (2,) = (LENGTH,WIDTH,2)
     pos[:, :, 0] = x;
     pos[:, :, 1] = y
     # pos.shape = (1890, 2)

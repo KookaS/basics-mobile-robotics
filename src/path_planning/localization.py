@@ -8,6 +8,8 @@ from matplotlib import colors
 
 from src.vision.camera import detect_and_rotate
 
+LENGTH = 32
+WIDTH = 29
 
 def test_ground_white(thymio: Thymio, white_threshold: int, verbose: bool = False):
     """
@@ -68,8 +70,8 @@ class Localization:
         sharpen = cv2.filter2D(final_grid, -1, sharpen_kernel)
 
         # resize the map to the wanted size
-        map_w_border_row = 47
-        map_w_border_col = 44
+        map_w_border_row = LENGTH + 2  # coz of border
+        map_w_border_col = WIDTH + 2   # coz of border
         vis_map = cv2.resize(sharpen, (map_w_border_col, map_w_border_row), cv2.INTER_AREA)
         return vis_map
 
@@ -156,7 +158,7 @@ class Localization:
                 if occupancy_grid[i, j] == self.OCCUPIED:
                     increased_occupancy_grid[i:i + 7, j:j + 7] = np.ones([7, 7])
 
-        final_occupancy_grid = increased_occupancy_grid[3:44, 3:47]
+        final_occupancy_grid = increased_occupancy_grid[3:WIDTH+2, 3:LENGTH+2]
         return final_occupancy_grid
 
     def display_map(self, grid, type_map):
@@ -169,18 +171,18 @@ class Localization:
 
         fig, ax = plt.subplots(figsize=(7, 7))
 
-        major_ticks_x = np.arange(0, 41 + 1, 5)
-        minor_ticks_x = np.arange(0, 41 + 1, 1)
-        major_ticks_y = np.arange(0, 44 + 1, 5)
-        minor_ticks_y = np.arange(0, 44 + 1, 1)
+        major_ticks_x = np.arange(0, WIDTH, 5)
+        minor_ticks_x = np.arange(0, WIDTH, 1)
+        major_ticks_y = np.arange(0, LENGTH, 5)
+        minor_ticks_y = np.arange(0, LENGTH, 1)
         ax.set_xticks(major_ticks_x)
         ax.set_xticks(minor_ticks_x, minor=True)
         ax.set_yticks(major_ticks_y)
         ax.set_yticks(minor_ticks_y, minor=True)
         ax.grid(which='minor', alpha=0.2)
         ax.grid(which='major', alpha=0.5)
-        ax.set_ylim([0, 44])
-        ax.set_xlim([0, 41])
+        ax.set_ylim([0, (LENGTH-1)])
+        ax.set_xlim([0, (WIDTH-1)])
         ax.grid(True)
 
         if type_map == self.OCCUPANCY:
@@ -196,7 +198,7 @@ class Localization:
             cmap = colors.ListedColormap(['white', 'black'])
 
             # Displaying the map
-            ax.imshow(grid, cmap=cmap, extent=[0, 42, 0, 44])
+            ax.imshow(grid, cmap=cmap, extent=[0, WIDTH, 0, LENGTH])
             plt.title("Localization grid");
 
         return fig, ax
@@ -213,9 +215,9 @@ class Localization:
 
         # thymio and goal coordinate
         thymio_x = object_grid[self.thymio][self.y]
-        thymio_y = 44 - object_grid[self.thymio][self.x]
+        thymio_y = LENGTH - object_grid[self.thymio][self.x]
         goal_x = object_grid[self.goal][self.y]
-        goal_y = 44 - object_grid[self.goal][self.x]
+        goal_y = LENGTH - object_grid[self.goal][self.x]
 
         start = (thymio_x, thymio_y)
         goal = (goal_x, goal_y)
@@ -230,17 +232,17 @@ class Localization:
 
         # arrange axis for imshow
         fig, ax = plt.subplots(figsize=(7, 7))
-        major_ticks_x = np.arange(0, 41 + 1, 5)
-        minor_ticks_x = np.arange(0, 41 + 1, 1)
-        major_ticks_y = np.arange(0, 44 + 1, 5)
-        minor_ticks_y = np.arange(0, 44 + 1, 1)
+        major_ticks_x = np.arange(0, WIDTH, 5)
+        minor_ticks_x = np.arange(0, WIDTH, 1)
+        major_ticks_y = np.arange(0, LENGTH, 5)
+        minor_ticks_y = np.arange(0, LENGTH, 1)
         ax.set_xticks(major_ticks_x)
         ax.set_xticks(minor_ticks_x, minor=True)
         ax.set_yticks(major_ticks_y)
         ax.set_yticks(minor_ticks_y, minor=True)
         ax.grid(which='minor', alpha=0.2)
         ax.grid(which='major', alpha=0.5)
-        ax.set_ylim([0, 44])
-        ax.set_xlim([0, 41])
+        ax.set_ylim([0, (LENGTH-1)])
+        ax.set_xlim([0, (WIDTH-1)])
         ax.grid(True)
         plt.imshow(world[:, :, ::-1])
