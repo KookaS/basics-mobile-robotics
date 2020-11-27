@@ -161,7 +161,6 @@ class EventHandler:
     def __camera_handler(self):
         print("inside __camera_handler")
         self.camera_measure = record_project()
-        # TODO sleep until kalman_ts
 
         if self.running[EventEnum.CAMERA.value]:
             time.sleep(self.interval_sleep)
