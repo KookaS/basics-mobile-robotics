@@ -35,7 +35,7 @@ class EventEnum(Enum):
 
 class ObstacleAvoidance:
 
-    def __init__(self, thymio: Thymio, final_occupancy_grid, position, interval_sleep=0.2, distance_avoidance=12.0,
+    def __init__(self, thymio: Thymio, final_occupancy_grid, position, interval_sleep=0.05, distance_avoidance=12.0,
                  angle_avoidance=5.0, square=2.5, wall_threshold=4000):
         self.thymio = thymio
         self.sensor_handler = SensorHandler(thymio)

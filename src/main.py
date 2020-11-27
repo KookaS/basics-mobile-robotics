@@ -9,7 +9,7 @@ from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
 
 # Adding the src folder in the current directory as it contains the script with the Thymio class
-from src.vision.camera import test_camera, record_project
+from src.vision.camera import test_camera, record_project, camera_tweak
 
 sys.path.insert(0, os.path.join(os.getcwd(), 'src'))
 load_dotenv()
@@ -32,13 +32,13 @@ def print_thymio(thymio: Thymio):
 def main():
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
-    # print_thymio(th)
 
     # MotionTuning(thymio=th, distance=15, angle=180.0)
-    EventHandler(th, interval_check=0.1, interval_sleep=0.02)  # check every interval_check seconds to change scenarios
-    # temp = record_project()
-    # print("[x, y, theta]", temp)
-    test_camera()
+    EventHandler(th, interval_check=0.1, interval_sleep=0.1)  # check every interval_check seconds to change scenarios
+    # record_project()
+    # time.sleep(5)
+    # test_camera()
+    # camera_tweak()
     print("END OF MAIN!")
 
 

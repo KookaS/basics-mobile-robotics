@@ -1,4 +1,3 @@
-import datetime
 import threading
 import time
 
@@ -6,12 +5,14 @@ import numpy as np
 from enum import Enum
 
 from src.displacement.movement import stop
+from src.displacement.planning import update_path
 from src.kalman.kalmann_filter import kalman_filter
 from src.local_avoidance.obstacle import ObstacleAvoidance
-from src.path_planning.occupancy import create_grid
+from src.path_planning.occupancy import create_grid, display_occupancy
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from src.vision.camera import record_project
+import matplotlib.pyplot as plt
 
 
 class EventEnum(Enum):
@@ -39,8 +40,6 @@ class EventHandler:
         self.obstacle_threshold = obstacle_threshold
         self.stop_threshold = stop_threshold
         self.sensor_handler = SensorHandler(self.thymio)
-        self.position = [0, 0, 0]
-        self.camera_measure = [0, 0, 0]
         self.covariance = [0.01 * np.ones([3, 3])]
         self.thymio_speed_to_mms = 0.4347
         self.kalman_time = time.time()
@@ -56,15 +55,18 @@ class EventHandler:
         Initialize the thread for checking scenarios, then pause it until next call.
         """
         self.final_occupancy_grid = create_grid()
+        self.camera_measure = record_project()
+        self.position = self.camera_measure
+
         threading.Timer(self.interval_check, self.__check_handler).start()
 
         self.state = EventEnum.KALMAN.value
         self.running[EventEnum.KALMAN.value] = True
         threading.Timer(self.interval_sleep, self.__kalman_handler).start()
         """
-                self.state = EventEnum.CAMERA.value
-                self.running[EventEnum.CAMERA.value] = True
-                threading.Timer(self.interval_sleep, self.__camera_handler).start()
+        self.state = EventEnum.CAMERA.value
+        self.running[EventEnum.CAMERA.value] = True
+        threading.Timer(self.interval_sleep, self.__camera_handler).start()
         """
         self.state = EventEnum.STOP.value
         self.running[EventEnum.STOP.value] = True
@@ -112,10 +114,9 @@ class EventHandler:
         This function is called on it's own thread every interval_sleep seconds.
         """
         # print("inside __global_handler")
-        # path = display_occupancy(self.final_occupancy_grid, self.position)
-        # update_path(self.thymio, path)
+        path = display_occupancy(self.final_occupancy_grid, (int(self.position[0]), int(self.position[1])))
+        update_path(self.thymio, path, self.position[0], self.position[1], self.position[2])
 
-        # self.running[EventEnum.KALMAN.value] = False    # stop kalman when we reached goal
         self.state = EventEnum.STOP.value
         self.running[EventEnum.STOP.value] = True
         self.__stop_handler()
@@ -141,11 +142,11 @@ class EventHandler:
         stop(self.thymio, verbose=True)
 
     def __kalman_handler(self):
-        print("inside __kalman_handler")
+        # print("inside __kalman_handler")
         speed = self.sensor_handler.speed()
         now = time.time()
-        ts = self.kalman_time - now
-        print(ts)
+        ts = now - self.kalman_time
+        print("ts", ts)
         self.kalman_time = now
         self.delta_sl = speed['left_speed'] * ts / self.thymio_speed_to_mms / 1000
         self.delta_sr = speed['right_speed'] * ts / self.thymio_speed_to_mms / 1000
@@ -153,16 +154,22 @@ class EventHandler:
         temp, self.covariance = kalman_filter(np.array(self.camera_measure), np.array(self.position), self.covariance,
                                               self.delta_sr, self.delta_sl)
         self.position = temp.tolist()
+        print("kalman position ", self.position)
 
         if self.running[EventEnum.KALMAN.value]:
             time.sleep(self.interval_sleep)
-            self.__kalman_handler()
+            # self.__kalman_handler()
+            self.__camera_handler()
 
     def __camera_handler(self):
-        print("inside __camera_handler")
+        # print("inside __camera_handler")
         self.camera_measure = record_project()
+        print("camera ", self.camera_measure)
         # TODO sleep until kalman_ts
 
-        if self.running[EventEnum.CAMERA.value]:
+        """if self.running[EventEnum.CAMERA.value]:
             time.sleep(self.interval_sleep)
-            self.__camera_handler()
+            self.__camera_handler()"""
+        if self.running[EventEnum.KALMAN.value]:
+            time.sleep(self.interval_sleep)
+            self.__kalman_handler()
