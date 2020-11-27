@@ -231,8 +231,6 @@ def create_grid():
 
 
 def display_occupancy(final_occupancy_grid, position):
-    goal = (20, 15)
-
     # Run the A* algorithm
     path = A_Star(position, goal, final_occupancy_grid)
     path = np.array(path).reshape(-1, 2).transpose()

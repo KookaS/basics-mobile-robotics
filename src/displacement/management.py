@@ -114,7 +114,8 @@ class EventHandler:
         This function is called on it's own thread every interval_sleep seconds.
         """
         # print("inside __global_handler")
-        path = display_occupancy(self.final_occupancy_grid, (int(self.position[0]), int(self.position[1])))
+        goal = (20, 15)
+        path = display_occupancy(self.final_occupancy_grid, (int(self.position[0]), int(self.position[1])), goal)
         update_path(self.thymio, path, self.position[0], self.position[1], self.position[2])
 
         self.state = EventEnum.STOP.value

@@ -50,8 +50,8 @@ up_yellow = np.array([30, 255, 255])
 
 def record_project():
     # grid size
-    gW = (LENGTH+2)
-    gH = (WIDTH+2)
+    gW = (LENGTH + 2)
+    gH = (WIDTH + 2)
 
     filename = int(os.getenv("CAMERA_PORT"))
 
@@ -64,8 +64,8 @@ def record_project():
     # detect both yellow and green square for further angle and center computation
     x2g, y2g, xfg, yfg, frameg = frame_analysis_green(fW, fH, image, gW, gH)
     x2y, y2y, xfy, yfy, framey = frame_analysis_yellow(fW, fH, image, gW, gH)
-    print("x2g, y2g, xfg, yfg", x2g, y2g, xfg, yfg)
-    print("x2y, y2y, xfy, yfy", x2y, y2y, xfy, yfy)
+    # print("x2g, y2g, xfg, yfg", x2g, y2g, xfg, yfg)
+    # print("x2y, y2y, xfy, yfy", x2y, y2y, xfy, yfy)
 
     # compute the center of the thymio & gives thymio angle
     x2 = (x2g + x2y) / 2
@@ -98,7 +98,7 @@ def frame_analysis_green(fW, fH, frame, gW, gH):
 
         # Display the resulting frame
         x2, y2 = (-1, -1)
-
+        xf, yf = (-1, -1)
 
     else:
 
@@ -160,7 +160,7 @@ def frame_analysis_yellow(fW, fH, frame, gW, gH):
 
         # Display the resulting frame
         x2, y2 = (-1, -1)
-
+        xf, yf = (-1, -1)
 
     else:
 
@@ -392,8 +392,8 @@ def test_camera():
     fW = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     fH = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     # Que QR code, a rajouter cadre + depassement
-    gW = (LENGTH+2)
-    gH = (WIDTH+2)
+    gW = (LENGTH + 2)
+    gH = (WIDTH + 2)
     cam_grid_ratio = (gW / fW, gH / fH)
 
     while (1):
