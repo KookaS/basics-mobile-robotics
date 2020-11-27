@@ -17,6 +17,8 @@ low_red = np.array([178, 179, 0])
 up_red = np.array([[255, 255, 255]])
 low_blue = np.array([80, 107, 97])
 up_blue = np.array([110, 195, 215])
+LENGTH = 32
+WIDTH = 29
 
 """
 """
@@ -48,8 +50,8 @@ up_yellow = np.array([30, 255, 255])
 
 def record_project():
     # grid size
-    gW = 47
-    gH = 44
+    gW = (LENGTH+2)
+    gH = (WIDTH+2)
 
     filename = int(os.getenv("CAMERA_PORT"))
 
@@ -87,11 +89,6 @@ def frame_analysis_green(fW, fH, frame, gW, gH):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     mask = cv2.inRange(hsv, low_green, up_green)
-    """
-    plt.figure()
-    plt.imshow(mask)
-    plt.show()
-    """
     res = cv2.bitwise_and(frame, frame, mask=mask)
 
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
@@ -395,8 +392,8 @@ def test_camera():
     fW = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     fH = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     # Que QR code, a rajouter cadre + depassement
-    gW = 44
-    gH = 42
+    gW = (LENGTH+2)
+    gH = (WIDTH+2)
     cam_grid_ratio = (gW / fW, gH / fH)
 
     while (1):
