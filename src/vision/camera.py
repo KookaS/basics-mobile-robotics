@@ -5,21 +5,31 @@ import os
 import cv2
 import numpy as np
 from dotenv import load_dotenv
+import matplotlib.pyplot as plt
 
 load_dotenv()
 
-"""
-"""
-low_green = np.array([36, 25, 25])
-up_green = np.array([102, 255, 255])
-low_yellow = np.array([20, 60, 60])
-up_yellow = np.array([70, 255, 255])
+low_green = np.array([42, 37, 178])
+up_green = np.array([84, 104, 251])
+low_yellow = np.array([15, 18, 255])
+up_yellow = np.array([63, 104, 255])
 low_red = np.array([178, 179, 0])
 up_red = np.array([[255, 255, 255]])
-low_blue = np.array([110, 50, 50])
-up_blue = np.array([132, 255, 255])
+low_blue = np.array([80, 107, 97])
+up_blue = np.array([110, 195, 215])
 LENGTH = 32
 WIDTH = 29
+
+"""
+"""
+
+"""
+# working
+low_green = np.array([40, 60, 60])
+up_green = np.array([80, 255, 255])
+low_yellow = np.array([20, 60, 60])
+up_yellow = np.array([70, 255, 255])
+"""
 
 """
 # new
@@ -52,15 +62,15 @@ def record_project():
     image = detect_and_rotate(frame)
 
     # detect both yellow and green square for further angle and center computation
-    x2g, y2g, frameg = frame_analysis_green(fW, fH, image, gW, gH)
-    x2y, y2y, framey = frame_analysis_yellow(fW, fH, image, gW, gH)
-    print("x2g, y2g", x2g, y2g)
-    print("x2y, y2y", x2y, y2y)
+    x2g, y2g, xfg, yfg, frameg = frame_analysis_green(fW, fH, image, gW, gH)
+    x2y, y2y, xfy, yfy, framey = frame_analysis_yellow(fW, fH, image, gW, gH)
+    print("x2g, y2g, xfg, yfg", x2g, y2g, xfg, yfg)
+    print("x2y, y2y, xfy, yfy", x2y, y2y, xfy, yfy)
 
     # compute the center of the thymio & gives thymio angle
     x2 = (x2g + x2y) / 2
     y2 = (y2g + y2y) / 2
-    angle = give_thymio_angle(image, x2y, y2y, x2g, y2g)
+    angle = give_thymio_angle(image, xfy, yfy, xfg, yfg)
 
     # plot the image with the drawings and print the X,Y coordinate and the angle
     # plt.figure()
@@ -83,7 +93,8 @@ def frame_analysis_green(fW, fH, frame, gW, gH):
 
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
     areas = [cv2.contourArea(c) for c in contours]
-    if len(areas) < 5:
+    # print("length: ", len(areas))
+    if len(areas) < 1:
 
         # Display the resulting frame
         x2, y2 = (-1, -1)
@@ -115,21 +126,21 @@ def frame_analysis_green(fW, fH, frame, gW, gH):
 
         frame = frame[:, :, ::-1]
 
-    return x2, y2, frame
+    return x2, y2, xf, fH - yf, frame
 
 
 # open the video and save the frame and return the fW,fH and the frame
 
 def video_handle(filename):
     cap = cv2.VideoCapture(filename)
-
-    fW = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    fH = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-
     _, frame = cap.read()
-    print(frame)
+
+    cv2.imwrite('frame.jpg', frame)
     cap.release()
+    frame = cv2.imread('frame.jpg')
+
+    fH, fW, _ = frame.shape
+
     return fW, fH, frame
 
 
@@ -144,7 +155,8 @@ def frame_analysis_yellow(fW, fH, frame, gW, gH):
 
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
     areas = [cv2.contourArea(c) for c in contours]
-    if len(areas) < 5:
+    # print("length: ", len(areas))
+    if len(areas) < 1:
 
         # Display the resulting frame
         x2, y2 = (-1, -1)
@@ -168,7 +180,7 @@ def frame_analysis_yellow(fW, fH, frame, gW, gH):
 
         frame = frame[:, :, ::-1]
 
-    return x2, y2, frame
+    return x2, y2, xf, fH - yf, frame
 
 
 # detect the green square and gives thymio angle
@@ -472,3 +484,46 @@ def test_camera():
 
     cv2.destroyAllWindows()
     cap.release()
+
+
+def nothing(x):
+    pass
+
+
+def camera_tweak():
+    cap = cv2.VideoCapture(int(os.getenv("CAMERA_PORT")))
+    cv2.namedWindow("Trackbars")
+
+    cv2.createTrackbar("L – H", "Trackbars", 0, 179, nothing)
+    cv2.createTrackbar("L – S", "Trackbars", 0, 255, nothing)
+    cv2.createTrackbar("L – V", "Trackbars", 0, 255, nothing)
+    cv2.createTrackbar("U – H", "Trackbars", 179, 179, nothing)
+    cv2.createTrackbar("U – S", "Trackbars", 255, 255, nothing)
+    cv2.createTrackbar("U – V", "Trackbars", 255, 255, nothing)
+
+    while True:
+        _, frame = cap.read()
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+        l_h = cv2.getTrackbarPos("L – H", "Trackbars")
+        l_s = cv2.getTrackbarPos("L – S", "Trackbars")
+        l_v = cv2.getTrackbarPos("L – V", "Trackbars")
+        u_h = cv2.getTrackbarPos("U – H", "Trackbars")
+        u_s = cv2.getTrackbarPos("U – S", "Trackbars")
+        u_v = cv2.getTrackbarPos("U – V", "Trackbars")
+
+        lower_blue = np.array([l_h, l_s, l_v])
+        upper_blue = np.array([u_h, u_s, u_v])
+        mask = cv2.inRange(hsv, lower_blue, upper_blue)
+
+        result = cv2.bitwise_and(frame, frame, mask=mask)
+
+        cv2.imshow("frame", frame)
+        cv2.imshow("mask", mask)
+        cv2.imshow("result", result)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
