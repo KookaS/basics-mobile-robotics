@@ -1,3 +1,5 @@
+import os
+
 from src.path_planning.a_star import A_Star
 from src.thymio.Thymio import Thymio
 import cv2
@@ -116,18 +118,13 @@ class Localization:
         thymio_x, thymio_y = (self.zero_init, self.zero_init)
 
         # look for the obstacle and increase there size
+        object_grid = [[0, 0]]
         for i in range(world_rows):
             for j in range(world_cols):
                 occupancy_grid[i][j] = int(occupancy_grid[i][j] / 255)
-                # find the thymio coordinate on the world map
-                if (world[i][j][self.g] > self.color_treshold) and (world[i][j][self.b] < self.color_treshold):
-                    thymio_x, thymio_y = (i, j)
-                # find the goal coordinate on the world map
-                elif (world[i][j][self.b] > self.color_treshold) and (world[i][j][self.g] < self.color_treshold):
+                if (world[i][j][self.b] > self.color_threshold) and (world[i][j][self.g] < self.color_threshold):
                     goal_x, goal_y = (i, j)
-                else:
-                    continue
-        object_grid = [[goal_x, goal_y], [thymio_x, thymio_y]]
+                    object_grid = [[goal_x, goal_y]]
         return object_grid, occupancy_grid
 
     def vision(self, image):
@@ -205,29 +202,29 @@ class Localization:
 
     def localize(self):
         # open image images/mapf.png
-        image = cv2.imread(
-            'C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/frame.jpg')
+        cap = cv2.VideoCapture(int(os.getenv("CAMERA_PORT")))
+        _, frame = cap.read()
+
+        cv2.imwrite('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/init.jpg', frame)
+        cap.release()
+        image = cv2.imread('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/init.jpg')
 
         object_grid, occupancy_grid, world = self.vision(image)
 
         # change to the right coordinate format
         occupancy_grid = (np.flipud(occupancy_grid)).transpose()
+        final_occupancy_grid = self.increased_obstacles_map(occupancy_grid)
         # display_map(occupancy_grid.transpose(), OCCUPANCY)
 
-        # thymio and goal coordinate
-        thymio_x = object_grid[self.thymio][self.y]
-        thymio_y = LENGTH - object_grid[self.thymio][self.x]
+        #  goal coordinate
         goal_x = object_grid[self.goal][self.y]
         goal_y = LENGTH - object_grid[self.goal][self.x]
-
-        start = (thymio_x, thymio_y)
         goal = (goal_x, goal_y)
 
-        final_occupancy_grid = self.increased_obstacles_map(occupancy_grid)
-
         # Run the A* algorithm
-        path = A_Star(start, goal, final_occupancy_grid)
-        path = np.array(path).reshape(-1, 2).transpose()
+        # path = A_Star(start, goal, final_occupancy_grid)
+        # path = np.array(path).reshape(-1, 2).transpose()
+        return final_occupancy_grid, goal
 
         self.display_global_path(start, goal, path, final_occupancy_grid.transpose())
 

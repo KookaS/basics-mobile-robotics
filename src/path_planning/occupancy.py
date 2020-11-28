@@ -218,8 +218,9 @@ def display_global_path(start, goal, path, occupancy_grid):
 
 
 def create_grid():
-    occupancy_grid = create_occupancy_grid()
+    # occupancy_grid = create_occupancy_grid()
     # display_map(occupancy_grid.transpose(), OCCUPANCY)
+
 
     # localization_grid = create_localization_grid()
     # display_map(localization_grid, LOCALIZATION)
