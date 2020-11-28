@@ -24,7 +24,6 @@ class EventEnum(Enum):
     LOCAL = 1
     STOP = 2
     KALMAN = 3
-    CAMERA = 4
 
 
 class EventHandler:
@@ -66,11 +65,7 @@ class EventHandler:
         self.state = EventEnum.KALMAN.value
         self.running[EventEnum.KALMAN.value] = True
         threading.Timer(self.interval_sleep, self.__kalman_handler).start()
-        """
-        self.state = EventEnum.CAMERA.value
-        self.running[EventEnum.CAMERA.value] = True
-        threading.Timer(self.interval_sleep, self.__camera_handler).start()
-        """
+
         self.state = EventEnum.STOP.value
         self.running[EventEnum.STOP.value] = True
         self.__stop_handler()
@@ -165,18 +160,13 @@ class EventHandler:
 
         if self.running[EventEnum.KALMAN.value]:
             time.sleep(self.interval_sleep)
-            # self.__kalman_handler()
             self.__camera_handler()
 
     def __camera_handler(self):
         # print("inside __camera_handler")
         self.camera_measure = record_project()
         print("camera ", self.camera_measure)
-        # TODO sleep until kalman_ts
 
-        """if self.running[EventEnum.CAMERA.value]:
-            time.sleep(self.interval_sleep)
-            self.__camera_handler()"""
         if self.running[EventEnum.KALMAN.value]:
             time.sleep(self.interval_sleep)
             self.__kalman_handler()
