@@ -30,9 +30,9 @@ def print_thymio(thymio: Thymio):
 
 
 def main():
-    test_camera()
-    camera_tweak()
-    time.sleep(30)
+    # test_camera()
+    # camera_tweak()
+    # time.sleep(30)
 
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
