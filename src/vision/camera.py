@@ -97,7 +97,7 @@ def record_project():
     # plt.show()
     # print('X', x2, 'Y', y2)
     # print('Angle', angle)
-    return [int(x2), int(y2), -angle]
+    return [int(x2), int(y2), angle]
 
 
 def frame_analysis_green(fW, fH, frame, gW, gH):
@@ -210,25 +210,24 @@ def give_thymio_angle(image, xcy, ycy, xcg, ycg):
     x1 = int(xcy)
     x2 = int(xcg)
 
-
-    if xcy > xcg :
-        if ycg > ycy:
+    if xcy > xcg:
+        if ycg >= ycy:
             angle_rad = np.arctan2(np.abs(y1 - y2), np.abs(x1 - x2))
-            angle = np.rad2deg(angle_rad)
+            angle = - np.rad2deg(angle_rad)
 
             # angle = math.atan(np.abs(y1 - y2) / np.abs(x1 - x2)) * 180 / math.pi
         else:
             angle_rad = np.arctan2(np.abs(y1 - y2), np.abs(x1 - x2))
-            angle = -np.rad2deg(angle_rad)
+            angle = np.rad2deg(angle_rad)
 
     else:
-        if ycg > ycy:
+        if ycg >= ycy:
             angle_rad = np.arctan2(np.abs(y1 - y2), np.abs(x1 - x2))
-            angle = np.rad2deg(angle_rad) + 90  # TODO
+            angle = np.rad2deg(angle_rad) - 180
 
         else:
             angle_rad = np.arctan2(np.abs(y1 - y2), np.abs(x1 - x2))
-            angle = np.rad2deg(angle_rad) - 180
+            angle = - np.rad2deg(angle_rad) + 180
 
     return angle
 

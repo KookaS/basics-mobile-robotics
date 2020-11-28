@@ -18,11 +18,23 @@ def update_path(thymio: Thymio, path, x, y, theta, interval_sleep=0.02):
 
         # Relative displacements to target
         delta_x = target_x - x
-        delta_x_cm = delta_x * 100 * CONST_DISP
         delta_y = target_y - y
-        delta_y_cm = delta_y * 100 * CONST_DISP
+        print("sign: ", np.sign(delta_x))
+        print("sign: ", np.sign(delta_x))
+
+        i = 1
+        while (x + (i + 1) * int(np.sign(delta_x)) == path[0][i]) and (
+                y + (i + 1) * int(np.sign(delta_y)) == path[1][i]):
+            i = i + 1
+            target_x = path[0][i]
+            target_y = path[1][i]
+
+        delta_x = target_x - x
+        delta_y = target_y - y
+        delta_x_cm = delta_x * CONST_DISP
+        delta_y_cm = delta_y * CONST_DISP
         delta_r = np.sqrt(delta_x_cm ** 2 + delta_y_cm ** 2)
-        print("x, y: ", x, y)
+        # print("x, y: ", x, y)
 
         # Relative rotation to target
         target_theta_rad = np.arctan2(delta_y_cm, delta_x_cm)
@@ -31,8 +43,8 @@ def update_path(thymio: Thymio, path, x, y, theta, interval_sleep=0.02):
         delta_theta = target_theta_deg - theta
         delta_theta = (delta_theta + 180.0) % 360.0 - 180.0
         # delta_theta = (delta_theta + np.pi) % (2 * np.pi) - np.pi
-        print("theta: ", theta)
-        print("target_theta_deg: ", target_theta_deg)
+        # print("theta: ", theta)
+        # print("target_theta_deg: ", target_theta_deg)
 
         # Apply rotation, then displacement
         print("rotate of ", delta_theta)

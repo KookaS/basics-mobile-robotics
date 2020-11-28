@@ -43,6 +43,7 @@ class EventHandler:
         self.covariance = [0.01 * np.ones([3, 3])]
         self.thymio_speed_to_mms = 0.4347
         self.kalman_time = time.time()
+        self.ts = 0
         self.delta_sr = 0
         self.delta_sl = 0
         self.running = []
@@ -63,9 +64,9 @@ class EventHandler:
 
         threading.Timer(self.interval_check, self.__check_handler).start()
 
-        """self.state = EventEnum.KALMAN.value
+        self.state = EventEnum.KALMAN.value
         self.running[EventEnum.KALMAN.value] = True
-        threading.Timer(self.interval_sleep, self.__kalman_handler).start()"""
+        threading.Timer(self.interval_sleep, self.__kalman_handler).start()
 
         self.state = EventEnum.STOP.value
         self.running[EventEnum.STOP.value] = True
@@ -119,8 +120,8 @@ class EventHandler:
         """
         # print("inside __global_handler")
         # print(path)
-        new_path = path
-        # new_path = update_path(self.thymio, path, self.position[0], self.position[1], self.position[2])
+        new_path = update_path(self.thymio, path, self.position[0], self.position[1], self.position[2])
+        time.sleep(self.ts)
 
         if self.running[EventEnum.GLOBAL.value]:
             time.sleep(self.interval_sleep)
@@ -151,6 +152,7 @@ class EventHandler:
         speed = self.sensor_handler.speed()
         now = time.time()
         ts = now - self.kalman_time
+        self.ts = ts
         print("ts", ts)
         self.kalman_time = now
         self.delta_sl = speed['left_speed'] * ts / self.thymio_speed_to_mms / 1000
