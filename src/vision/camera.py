@@ -224,7 +224,7 @@ def give_thymio_angle(image, xcy, ycy, xcg, ycg):
     else:
         if ycg > ycy:
             angle_rad = np.arctan2(np.abs(y1 - y2), np.abs(x1 - x2))
-            angle = np.rad2deg(angle_rad) + 90
+            angle = np.rad2deg(angle_rad) + 90  # TODO
 
         else:
             angle_rad = np.arctan2(np.abs(y1 - y2), np.abs(x1 - x2))
