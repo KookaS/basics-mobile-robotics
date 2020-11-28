@@ -211,27 +211,24 @@ def give_thymio_angle(image, xcy, ycy, xcg, ycg):
     x2 = int(xcg)
 
 
-    if xcy > xcg:
+    if xcy > xcg :
         if ycg > ycy:
-            angle = math.atan(np.abs(y1 - y2) / np.abs(x1 - x2)) * 180 / math.pi
-        elif ycg == ycy:
-            angle = 180
-        else:
-            angle = -math.atan(np.abs(y1 - y2) / np.abs(x1 - x2)) * 180 / math.pi
+            angle_rad = np.arctan2(np.abs(y1 - y2), np.abs(x1 - x2))
+            angle = np.rad2deg(angle_rad)
 
-    elif xcy == xcg:
-        if ycy > ycg:
-            angle = 90
+            # angle = math.atan(np.abs(y1 - y2) / np.abs(x1 - x2)) * 180 / math.pi
         else:
-            angle = -90
+            angle_rad = np.arctan2(np.abs(y1 - y2), np.abs(x1 - x2))
+            angle = -np.rad2deg(angle_rad)
 
     else:
         if ycg > ycy:
-            angle = math.atan(np.abs(y1 - y2) / np.abs(x1 - x2)) * 180 / math.pi + 90
-        elif ycg == ycy:
-            angle = 180
+            angle_rad = np.arctan2(np.abs(y1 - y2), np.abs(x1 - x2))
+            angle = np.rad2deg(angle_rad) + 90
+
         else:
-            angle = math.atan(np.abs(y1 - y2) / np.abs(x1 - x2)) * 180 / math.pi - 180
+            angle_rad = np.arctan2(np.abs(y1 - y2), np.abs(x1 - x2))
+            angle = np.rad2deg(angle_rad) - 180
 
     return angle
 
