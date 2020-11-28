@@ -69,17 +69,17 @@ def create_occupancy_grid():
     # occupancy_grid[14:16, 40:45] = OCCUPIED
 
     # obstacle 2
-    occupancy_grid[0:9, 18] = OCCUPIED
-    occupancy_grid[4:8, 19] = OCCUPIED
-    occupancy_grid[4:7, 20] = OCCUPIED
-    occupancy_grid[4:6, 21] = OCCUPIED
+    occupancy_grid[0:6, 18] = OCCUPIED
+    occupancy_grid[4:5, 19] = OCCUPIED
+    occupancy_grid[4:5, 20] = OCCUPIED
+    occupancy_grid[4:5, 21] = OCCUPIED
     occupancy_grid[4, 22] = OCCUPIED
 
     # obstacle 3
-    #occupancy_grid[34:, 29] = OCCUPIED
+    # occupancy_grid[34:, 29] = OCCUPIED
 
     # obstacle 4
-    occupancy_grid[21:26, 9:14] = OCCUPIED
+    occupancy_grid[24:27, 11:14] = OCCUPIED
 
     return occupancy_grid
 
@@ -230,7 +230,7 @@ def create_grid():
     return final_occupancy_grid
 
 
-def display_occupancy(final_occupancy_grid, position):
+def display_occupancy(final_occupancy_grid, position, goal):
     # Run the A* algorithm
     path = A_Star(position, goal, final_occupancy_grid)
     path = np.array(path).reshape(-1, 2).transpose()

@@ -94,11 +94,11 @@ def plot_covariance_ellipse(state_est, cov_est):
     return px, py
 
 
-def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
+def kalman_filter(camera, state_est_prev, cov_est_prev, delta_sr, delta_sl):
     """
     Estimates the current state using input sensor data and the previous state
 
-    param z: array representing the measurement (x,y,theta) (coming from the vision sensor)
+    param camera: array representing the measurement (x,y,theta) (coming from the vision sensor)
     param delta_sr: travelled distance for the right wheel (in meters)
     param delta_sl: travelled distance for the left wheel (in meters)
     param state_est_prev: previous state a posteriori estimation
@@ -107,8 +107,13 @@ def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
     return state_est: new a posteriori state estimation
     return cov_est: new a posteriori state covariance
     """
-    condition = True
-    if z[0] != -1 and z[1] != -1:
+    new_pos = np.array([[state_est_prev[0], state_est_prev[1], state_est_prev[2]]])
+    new_cam = np.array([[camera[0], camera[1], camera[2]]]).T
+    print(new_pos)
+
+    if camera[0] != -1 and camera[1] != -1:
+        condition = True
+    else:
         condition = False
 
     theta = state_est_prev[2]
@@ -120,8 +125,11 @@ def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
 
     # Prediction step
     # estimated mean of the state
-    state_est_a_priori = np.array(state_est_prev) + np.array(
-        [delta_s * np.cos(theta + delta_theta / 2), delta_s * np.sin(theta + delta_theta / 2), delta_theta])
+    temp = np.array(
+        [[delta_s * np.cos(theta + delta_theta / 2), delta_s * np.sin(theta + delta_theta / 2), delta_theta]])
+    print("temp ", temp)
+    state_est_a_priori = (state_est_prev + temp).T
+    print("state_est_a_priori ", state_est_a_priori)
 
     # Estimated covariance of the state
     cov_est_a_priori = np.dot(Fx, np.dot(cov_est_prev, Fx.T)) + np.dot(Fu, np.dot(R, Fu.T))
@@ -130,17 +138,23 @@ def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
     if condition:
         # Update step
         # innovation / measurement residual
-        i = z - state_est_a_priori
+        i = new_cam - state_est_a_priori
+        print(i)
 
         # Kalman gain (tells how much the predictions should be corrected based on the measurements)
         K = np.dot(cov_est_a_priori, np.linalg.inv(cov_est_a_priori + Q))
 
+        new = np.dot(K, i)
+        print(new)
         # a posteriori estimate
-        state_est = state_est_a_priori + np.dot(K, i)
+        state_est = state_est_a_priori + new
+        print(state_est)
         cov_est = cov_est_a_priori - np.dot(K, cov_est_a_priori)
 
     else:
+        # TODO change stuff here
         state_est = state_est_a_priori
+        print(state_est)
         cov_est = cov_est_a_priori
 
-    return state_est, cov_est
+    return [state_est[0, 0], state_est[1, 0], state_est[2, 0]], cov_est

@@ -199,13 +199,14 @@ class Localization:
 
             # Displaying the map
             ax.imshow(grid, cmap=cmap, extent=[0, WIDTH, 0, LENGTH])
-            plt.title("Localization grid");
+            plt.title("Localization grid")
 
         return fig, ax
 
     def localize(self):
         # open image images/mapf.png
-        image = cv2.imread('images/mapf.png')
+        image = cv2.imread(
+            'C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/frame.jpg')
 
         object_grid, occupancy_grid, world = self.vision(image)
 
