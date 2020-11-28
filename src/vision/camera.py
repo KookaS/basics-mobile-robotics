@@ -60,6 +60,7 @@ def record_project():
 
     # detect the blue square and resize the frame
     image = detect_and_rotate(frame)
+    fW, fH, _ = image.shape
 
     # detect both yellow and green square for further angle and center computation
     x2g, y2g, xfg, yfg, frameg = frame_analysis_green(fW, fH, image, gW, gH)
@@ -68,8 +69,26 @@ def record_project():
     # print("x2y, y2y, xfy, yfy", x2y, y2y, xfy, yfy)
 
     # compute the center of the thymio & gives thymio angle
+
+    x2g_temp = LENGTH - y2g
+    y2g = x2g
+    x2g = x2g_temp
+
+    x2y_temp = LENGTH - y2y
+    y2y = x2y
+    x2y = x2y_temp
+
+    xfg_temp = fW - yfg
+    yfg = xfg
+    xfg = xfg_temp
+
+    xfy_temp = fW - yfy
+    yfy = xfy
+    xfy = xfy_temp
+
     x2 = (x2g + x2y) / 2
     y2 = (y2g + y2y) / 2
+
     angle = give_thymio_angle(image, xfy, yfy, xfg, yfg)
 
     # plot the image with the drawings and print the X,Y coordinate and the angle
@@ -78,7 +97,7 @@ def record_project():
     # plt.show()
     # print('X', x2, 'Y', y2)
     # print('Angle', angle)
-    return [int(x2), int(y2), -angle]
+    return [int(x2), int(y2), angle]
 
 
 def frame_analysis_green(fW, fH, frame, gW, gH):
@@ -186,10 +205,11 @@ def frame_analysis_yellow(fW, fH, frame, gW, gH):
 # detect the green square and gives thymio angle
 
 def give_thymio_angle(image, xcy, ycy, xcg, ycg):
-    y1 = ycy
-    y2 = ycg
-    x1 = xcy
-    x2 = xcg
+    y1 = int(ycy)
+    y2 = int(ycg)
+    x1 = int(xcy)
+    x2 = int(xcg)
+
 
     if xcy > xcg:
         if ycg > ycy:
@@ -204,6 +224,7 @@ def give_thymio_angle(image, xcy, ycy, xcg, ycg):
             angle = 90
         else:
             angle = -90
+
     else:
         if ycg > ycy:
             angle = math.atan(np.abs(y1 - y2) / np.abs(x1 - x2)) * 180 / math.pi + 90
