@@ -124,7 +124,6 @@ def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
     z = np.array([[z[0]], [z[1]], [z[2]]])
     state_est_prev = np.array([[state_est_prev[0]], [state_est_prev[1]], [state_est_prev[2]]])
 
-
     state_est_a_priori = state_est_prev + np.array(
         [[delta_s * np.cos(theta + delta_theta / 2)], [delta_s * np.sin(theta + delta_theta / 2)], [delta_theta]])
 
@@ -148,6 +147,6 @@ def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
         state_est = state_est_a_priori
         cov_est = cov_est_a_priori
 
-    state_est = [state_est[0, 0], state_est[1, 0], state_est[2, 0]]
+    state_est = state_est[-1, 0].flatten().tolist()
 
     return state_est, cov_est

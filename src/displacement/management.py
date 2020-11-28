@@ -111,14 +111,17 @@ class EventHandler:
         self.__check_handler()
         return
 
-    def __global_handler(self):
+    def __global_thread_init(self):
+        self.goal = (15, 15)
+        path = display_occupancy(self.final_occupancy_grid, (int(self.position[0]), int(self.position[1])), self.goal)
+        self.__global_handler(path)
+
+    def __global_handler(self, path):
         """
         Manages the thread for the GLOBAL scenario.
         This function is called on it's own thread every interval_sleep seconds.
         """
         # print("inside __global_handler")
-        self.goal = (15, 15)
-        path = display_occupancy(self.final_occupancy_grid, (int(self.position[0]), int(self.position[1])), self.goal)
         update_path(self.thymio, path, self.position[0], self.position[1], self.position[2])
 
         self.state = EventEnum.STOP.value
@@ -155,9 +158,8 @@ class EventHandler:
         self.delta_sl = speed['left_speed'] * ts / self.thymio_speed_to_mms / 1000
         self.delta_sr = speed['right_speed'] * ts / self.thymio_speed_to_mms / 1000
 
-        temp, self.covariance = kalman_filter(np.array(self.camera_measure), np.array(self.position), self.covariance,
-                                              self.delta_sr, self.delta_sl)
-        # self.position = temp.tolist()
+        self.position, self.covariance = kalman_filter(self.camera_measure, self.position, self.covariance,
+                                                       self.delta_sr, self.delta_sl)
         print("kalman position ", self.position)
 
         if self.running[EventEnum.KALMAN.value]:

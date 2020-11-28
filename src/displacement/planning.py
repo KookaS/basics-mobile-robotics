@@ -11,6 +11,7 @@ from src.thymio.Thymio import Thymio
 
 def update_path(thymio: Thymio, path, x, y, theta, interval_sleep=0.02):
     CONST_DISP = 2.5  # distance in cm between two squares
+    # TODO wait for thread to die before new thread
     for i in range(len(path[0]) - 1):
         target_x = path[0][0]
         target_y = path[1][0]
