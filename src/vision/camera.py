@@ -407,7 +407,7 @@ def test_camera():
 
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
         areas = [cv2.contourArea(c) for c in contours]
-        if len(areas) < 5:
+        if len(areas) < 1:
 
             # Display the resulting frame
             frame = cv2.resize(frame, (0, 0), None, 1, 1)
@@ -432,7 +432,7 @@ def test_camera():
 
             contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
             areas = [cv2.contourArea(c) for c in contours]
-            if len(areas) < 5:
+            if len(areas) < 1:
 
                 # Display the resulting frame
                 frame = cv2.resize(frame, (0, 0), None, 1, 1)

@@ -142,12 +142,10 @@ def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
 
         # a posteriori estimate
         state_est = state_est_a_priori + np.dot(K, i)
-        print(state_est)
         cov_est = cov_est_a_priori - np.dot(K, cov_est_a_priori)
 
     else:
         state_est = state_est_a_priori
-        print(state_est)
         cov_est = cov_est_a_priori
 
     state_est = [state_est[0, 0], state_est[1, 0], state_est[2, 0]]
