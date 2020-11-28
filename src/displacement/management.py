@@ -40,7 +40,7 @@ class EventHandler:
         self.obstacle_threshold = obstacle_threshold
         self.stop_threshold = stop_threshold
         self.sensor_handler = SensorHandler(self.thymio)
-        self.covariance = [0.01 * np.ones([3, 3])]
+        self.covariance = 0.01 * np.ones([3, 3])
         self.thymio_speed_to_mms = 0.4347
         self.kalman_time = time.time()
         self.ts = 0

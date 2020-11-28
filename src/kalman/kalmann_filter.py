@@ -119,12 +119,17 @@ def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
     Fx = jacobianF_x(theta, delta_s, delta_theta)
     Fu = jacobianF_u(theta, delta_s, delta_theta)
 
+    # print("z: ", z)
+    # print("state_est_prev: ", state_est_prev)
+    # print("cov_est_prev: ", cov_est_prev)
+    # print("delta_sr: ", delta_sr)
+    # print("delta_sl: ", delta_sl)
     # Prediction step
     # estimated mean of the state
     z = np.array([[z[0]], [z[1]], [z[2]]])
     state_est_prev = np.array([[state_est_prev[0]], [state_est_prev[1]], [state_est_prev[2]]])
-    print("z: ", z)
-    print("state_est_prev: ", state_est_prev)
+    # print("z: ", z)
+    # print("state_est_prev: ", state_est_prev)
 
     state_est_a_priori = state_est_prev + np.array(
         [[delta_s * np.cos(theta + delta_theta / 2)], [delta_s * np.sin(theta + delta_theta / 2)], [delta_theta]])
@@ -149,8 +154,7 @@ def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
         state_est = state_est_a_priori
         cov_est = cov_est_a_priori
 
-    print("cov_est: ", cov_est)
-    print("state_est: ", state_est)
-    # state_est = state_est[-1, 0].flatten().tolist()
+    # print("cov_est: ", cov_est)
+    # print("state_est: ", state_est)
 
-    return state_est, cov_est
+    return state_est.flatten().tolist(), cov_est
