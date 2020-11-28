@@ -199,7 +199,7 @@ class Localization:
 
             # Displaying the map
             ax.imshow(grid, cmap=cmap, extent=[0, WIDTH, 0, LENGTH])
-            plt.title("Localization grid");
+            plt.title("Localization grid")
 
         return fig, ax
 
@@ -208,9 +208,9 @@ class Localization:
         cap = cv2.VideoCapture(int(os.getenv("CAMERA_PORT")))
         _, frame = cap.read()
 
-        cv2.imwrite('init.jpg', frame)
+        cv2.imwrite('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/init.jpg', frame)
         cap.release()
-        image = cv2.imread('init.jpg')
+        image = cv2.imread('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/init.jpg')
 
         object_grid, occupancy_grid, world = self.vision(image)
 

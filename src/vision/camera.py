@@ -9,14 +9,14 @@ import matplotlib.pyplot as plt
 
 load_dotenv()
 
-low_green = np.array([42, 37, 178])
-up_green = np.array([84, 104, 251])
-low_yellow = np.array([15, 18, 255])
-up_yellow = np.array([63, 104, 255])
+low_green = np.array([41, 51, 116])
+up_green = np.array([79, 127, 255])
+low_yellow = np.array([25, 19, 200])
+up_yellow = np.array([38, 137, 255])
 low_red = np.array([178, 179, 0])
 up_red = np.array([[255, 255, 255]])
-low_blue = np.array([80, 107, 97])
-up_blue = np.array([110, 195, 215])
+low_blue = np.array([85, 95, 113])
+up_blue = np.array([110, 255, 174])
 LENGTH = 32
 WIDTH = 29
 
@@ -135,9 +135,9 @@ def video_handle(filename):
     cap = cv2.VideoCapture(filename)
     _, frame = cap.read()
 
-    cv2.imwrite('frame.jpg', frame)
+    cv2.imwrite('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/frame.jpg', frame)
     cap.release()
-    frame = cv2.imread('frame.jpg')
+    frame = cv2.imread('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/frame.jpg')
 
     fH, fW, _ = frame.shape
 
@@ -477,8 +477,12 @@ def test_camera():
                 resy = cv2.bitwise_and(frame, frame, masky)
                 maskg = cv2.inRange(hsv, low_green, up_green)
                 resg = cv2.bitwise_and(frame, frame, maskg)
+                maskb = cv2.inRange(hsv, low_blue, up_blue)
+                maskr = cv2.inRange(hsv, low_red, up_red)
                 cv2.imshow('resg', maskg)
                 cv2.imshow('resy', masky)
+                cv2.imshow('resb', maskb)
+                cv2.imshow('resr', maskr)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
