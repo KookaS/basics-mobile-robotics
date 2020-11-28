@@ -147,6 +147,7 @@ def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
         state_est = state_est_a_priori
         cov_est = cov_est_a_priori
 
+    print("kalman return: ", state_est[-1, 0])
     state_est = state_est[-1, 0].flatten().tolist()
 
     return state_est, cov_est
