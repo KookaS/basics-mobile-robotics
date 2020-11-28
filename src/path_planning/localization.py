@@ -205,28 +205,29 @@ class Localization:
 
     def localize(self):
         # open image images/mapf.png
-        image = cv2.imread('images/mapf.png')
+        cap = cv2.VideoCapture(int(os.getenv("CAMERA_PORT")))
+        _, frame = cap.read()
+
+        cv2.imwrite('init.jpg', frame)
+        cap.release()
+        image = cv2.imread('init.jpg')
 
         object_grid, occupancy_grid, world = self.vision(image)
 
         # change to the right coordinate format
         occupancy_grid = (np.flipud(occupancy_grid)).transpose()
+        final_occupancy_grid = self.increased_obstacles_map(occupancy_grid)
         # display_map(occupancy_grid.transpose(), OCCUPANCY)
 
-        # thymio and goal coordinate
-        thymio_x = object_grid[self.thymio][self.y]
-        thymio_y = LENGTH - object_grid[self.thymio][self.x]
+        #  goal coordinate
         goal_x = object_grid[self.goal][self.y]
         goal_y = LENGTH - object_grid[self.goal][self.x]
-
-        start = (thymio_x, thymio_y)
         goal = (goal_x, goal_y)
 
-        final_occupancy_grid = self.increased_obstacles_map(occupancy_grid)
-
         # Run the A* algorithm
-        path = A_Star(start, goal, final_occupancy_grid)
-        path = np.array(path).reshape(-1, 2).transpose()
+        # path = A_Star(start, goal, final_occupancy_grid)
+        # path = np.array(path).reshape(-1, 2).transpose()
+        return final_occupancy_grid, goal
 
         self.display_global_path(start, goal, path, final_occupancy_grid.transpose())
 

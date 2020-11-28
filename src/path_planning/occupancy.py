@@ -218,8 +218,9 @@ def display_global_path(start, goal, path, occupancy_grid):
 
 
 def create_grid():
-    occupancy_grid = create_occupancy_grid()
+    # occupancy_grid = create_occupancy_grid()
     # display_map(occupancy_grid.transpose(), OCCUPANCY)
+
 
     # localization_grid = create_localization_grid()
     # display_map(localization_grid, LOCALIZATION)
@@ -230,7 +231,7 @@ def create_grid():
     return final_occupancy_grid
 
 
-def display_occupancy(final_occupancy_grid, position):
+def display_occupancy(final_occupancy_grid, position, goal):
     # Run the A* algorithm
     path = A_Star(position, goal, final_occupancy_grid)
     path = np.array(path).reshape(-1, 2).transpose()

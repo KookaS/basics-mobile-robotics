@@ -8,6 +8,7 @@ from src.displacement.movement import stop
 from src.displacement.planning import update_path
 from src.kalman.kalmann_filter import kalman_filter
 from src.local_avoidance.obstacle import ObstacleAvoidance
+from src.path_planning.localization import lo, Localization
 from src.path_planning.occupancy import create_grid, display_occupancy
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
@@ -33,7 +34,7 @@ class EventHandler:
     """
 
     def __init__(self, thymio: Thymio, interval_check=0.2, interval_sleep=0.01, obstacle_threshold=2000,
-                 stop_threshold=3500):
+                 stop_threshold=3500, goal=(20, 15)):
         self.thymio: Thymio = thymio
         self.interval_check = interval_check
         self.interval_sleep = interval_sleep
@@ -46,6 +47,7 @@ class EventHandler:
         self.delta_sr = 0
         self.delta_sl = 0
         self.running = []
+        self.goal = goal
         for _ in EventEnum:
             self.running.append(False)
         self.__check_thread_init()
@@ -54,7 +56,8 @@ class EventHandler:
         """
         Initialize the thread for checking scenarios, then pause it until next call.
         """
-        self.final_occupancy_grid = create_grid()
+        self.localize = Localization()
+        self.final_occupancy_grid, self.goal = self.localize.localize()
         self.camera_measure = record_project()
         self.position = self.camera_measure
 
@@ -114,8 +117,8 @@ class EventHandler:
         This function is called on it's own thread every interval_sleep seconds.
         """
         # print("inside __global_handler")
-        goal = (20, 15)
-        path = display_occupancy(self.final_occupancy_grid, (int(self.position[0]), int(self.position[1])), goal)
+        self.goal = (15, 15)
+        path = display_occupancy(self.final_occupancy_grid, (int(self.position[0]), int(self.position[1])), self.goal)
         update_path(self.thymio, path, self.position[0], self.position[1], self.position[2])
 
         self.state = EventEnum.STOP.value
