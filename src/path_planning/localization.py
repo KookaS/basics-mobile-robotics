@@ -1,3 +1,5 @@
+import os
+
 from src.path_planning.a_star import A_Star
 from src.thymio.Thymio import Thymio
 import cv2
@@ -116,18 +118,13 @@ class Localization:
         thymio_x, thymio_y = (self.zero_init, self.zero_init)
 
         # look for the obstacle and increase there size
+        object_grid = [[0, 0]]
         for i in range(world_rows):
             for j in range(world_cols):
                 occupancy_grid[i][j] = int(occupancy_grid[i][j] / 255)
-                # find the thymio coordinate on the world map
-                if (world[i][j][self.g] > self.color_treshold) and (world[i][j][self.b] < self.color_treshold):
-                    thymio_x, thymio_y = (i, j)
-                # find the goal coordinate on the world map
-                elif (world[i][j][self.b] > self.color_treshold) and (world[i][j][self.g] < self.color_treshold):
+                if (world[i][j][self.b] > self.color_threshold) and (world[i][j][self.g] < self.color_threshold):
                     goal_x, goal_y = (i, j)
-                else:
-                    continue
-        object_grid = [[goal_x, goal_y], [thymio_x, thymio_y]]
+                    object_grid = [[goal_x, goal_y]]
         return object_grid, occupancy_grid
 
     def vision(self, image):

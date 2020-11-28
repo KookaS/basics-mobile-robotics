@@ -8,7 +8,7 @@ from src.displacement.movement import stop
 from src.displacement.planning import update_path
 from src.kalman.kalmann_filter import kalman_filter
 from src.local_avoidance.obstacle import ObstacleAvoidance
-from src.path_planning.localization import lo, Localization
+from src.path_planning.localization import Localization
 from src.path_planning.occupancy import create_grid, display_occupancy
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
@@ -157,7 +157,7 @@ class EventHandler:
 
         temp, self.covariance = kalman_filter(np.array(self.camera_measure), np.array(self.position), self.covariance,
                                               self.delta_sr, self.delta_sl)
-        self.position = temp.tolist()
+        # self.position = temp.tolist()
         print("kalman position ", self.position)
 
         if self.running[EventEnum.KALMAN.value]:
