@@ -59,12 +59,13 @@ class EventHandler:
         self.final_occupancy_grid, self.goal = self.localize.localize()
         self.camera_measure = record_project()
         self.position = self.camera_measure
+        print("initial positions: ", self.position)
 
         threading.Timer(self.interval_check, self.__check_handler).start()
 
-        self.state = EventEnum.KALMAN.value
+        """self.state = EventEnum.KALMAN.value
         self.running[EventEnum.KALMAN.value] = True
-        threading.Timer(self.interval_sleep, self.__kalman_handler).start()
+        threading.Timer(self.interval_sleep, self.__kalman_handler).start()"""
 
         self.state = EventEnum.STOP.value
         self.running[EventEnum.STOP.value] = True
@@ -117,8 +118,9 @@ class EventHandler:
         This function is called on it's own thread every interval_sleep seconds.
         """
         # print("inside __global_handler")
-        print(path)
-        new_path = update_path(self.thymio, path, self.position[0], self.position[1], self.position[2])
+        # print(path)
+        new_path = path
+        # new_path = update_path(self.thymio, path, self.position[0], self.position[1], self.position[2])
 
         if self.running[EventEnum.GLOBAL.value]:
             time.sleep(self.interval_sleep)

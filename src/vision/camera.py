@@ -97,7 +97,7 @@ def record_project():
     # plt.show()
     # print('X', x2, 'Y', y2)
     # print('Angle', angle)
-    return [int(x2), int(y2), angle]
+    return [int(x2), int(y2), -angle]
 
 
 def frame_analysis_green(fW, fH, frame, gW, gH):
