@@ -68,7 +68,7 @@ class EventHandler:
 
         self.state = EventEnum.KALMAN.value
         self.running[EventEnum.KALMAN.value] = True
-        threading.Timer(self.interval_sleep, self.__kalman_handler).start()
+        # threading.Timer(self.interval_sleep, self.__kalman_handler).start()
 
         self.state = EventEnum.CAMERA.value
         self.running[EventEnum.CAMERA.value] = True
