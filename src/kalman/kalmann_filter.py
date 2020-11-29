@@ -3,11 +3,11 @@ import math
 
 Ts = 0.1
 # tune model params
-qx = 0.2
-qy = 0.2
-qt = 0.4
-k_delta_sr = 0.8
-k_delta_sl = 0.8
+qx = 0.8
+qy = 0.8
+qt = 0.8
+k_delta_sr = 0.1
+k_delta_sl = 0.1
 state_est = [np.array([[0], [0], [0]])]
 cov_est = [0.01 * np.ones([3, 3])]
 # k_delta_sr = 0.01

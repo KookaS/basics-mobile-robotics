@@ -101,14 +101,9 @@ class EventHandler:
 
         # apply displacement
         print("done rotating")
-        print("Forward of: ", delta_r)
-        l_speed_ratio, r_speed_ratio, distance_time = advance_time(delta_r)
         self.kalman_time = time.time()
         self.right_dir = int(np.sign(delta_r))
         self.left_dir = int(np.sign(delta_r))
-        move(self.thymio, l_speed_ratio, r_speed_ratio, verbose=True)
-
-        # check if at the next point
         thread = advance_thread(self.thymio, delta_r, verbose=True)
         while thread.is_alive():
             # print("still not moves at next point!")

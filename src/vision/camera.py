@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 
 load_dotenv()
 
-low_green = np.array([53, 46, 181])
-up_green = np.array([79, 93, 255])
+low_green = np.array([43, 32, 164])
+up_green = np.array([75, 255, 255])
 low_yellow = np.array([7, 37, 255])
 up_yellow = np.array([31, 139, 255])
 low_red = np.array([178, 179, 0])
