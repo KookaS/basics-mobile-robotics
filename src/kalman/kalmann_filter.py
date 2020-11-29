@@ -3,11 +3,11 @@ import math
 
 Ts = 0.1
 # tune model params
-qx = 0.2
-qy = 0.2
-qt = 0.4
-k_delta_sr = 0.8
-k_delta_sl = 0.8
+qx = 0.8
+qy = 0.8
+qt = 0.8
+k_delta_sr = 0.1
+k_delta_sl = 0.1
 state_est = [np.array([[0], [0], [0]])]
 cov_est = [0.01 * np.ones([3, 3])]
 # k_delta_sr = 0.01
@@ -94,9 +94,10 @@ def plot_covariance_ellipse(state_est, cov_est):
     return px, py
 
 
-def kalman_filter(z_prev, z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
+def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl, measurement):
     """
     Estimates the current state using input sensor data and the previous state
+    Everything is in meter and seconds here!
 
     param z: array representing the measurement (x,y,theta) (coming from the vision sensor)
     param delta_sr: travelled distance for the right wheel (in meters)
@@ -107,10 +108,8 @@ def kalman_filter(z_prev, z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
     return state_est: new a posteriori state estimation
     return cov_est: new a posteriori state covariance
     """
-    if z[0] != -1 and z[1] != -1 and z_prev != z:
-        condition = True  # estimation and correction step
-    else:
-        condition = False  # estimation step only
+    if z[0] == -1 or z[1] == -1:  # if no camera, just odometry
+        measurement = False
 
     theta = state_est_prev[2]
     delta_s = (delta_sr + delta_sl) / 2
@@ -138,7 +137,7 @@ def kalman_filter(z_prev, z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
     cov_est_a_priori = np.dot(Fx, np.dot(cov_est_prev, Fx.T)) + np.dot(Fu, np.dot(R, Fu.T))
 
     # If we have camera's measurements
-    if condition:
+    if measurement:  # odometry et measurements
         # Update step
         # innovation / measurement residual
         i = z - state_est_a_priori
@@ -150,11 +149,10 @@ def kalman_filter(z_prev, z, state_est_prev, cov_est_prev, delta_sr, delta_sl):
         state_est = state_est_a_priori + np.dot(K, i)
         cov_est = cov_est_a_priori - np.dot(K, cov_est_a_priori)
 
-    else:
+    else:  # odometry
         state_est = state_est_a_priori
         cov_est = cov_est_a_priori
 
     # print("cov_est: ", cov_est)
     # print("state_est: ", state_est)
-
-    return state_est.flatten().astype(int).tolist(), cov_est
+    return state_est.flatten().tolist(), cov_est

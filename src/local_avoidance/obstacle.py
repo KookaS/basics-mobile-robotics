@@ -46,7 +46,6 @@ class ObstacleAvoidance:
         self.position = position
         self.square = square
         self.wall_threshold = wall_threshold
-        self.thread = threading.Timer(interval=interval_sleep, function=stop)
         stop(self.thymio)
         self.__obstacle_avoidance()
 
@@ -56,73 +55,51 @@ class ObstacleAvoidance:
         rotated = None
         while np.amax(sensor_values).astype(int) >= 0:  # while still detects a wall, keep turning
             sensor_values = self.sensor_handler.sensor_raw()["sensor"]
-            # print(sensor_values)
             if (sensor_values[1] > 0) and (sensor_values[3] > 0):  # both sides
                 angle = self.angle_avoidance * float(
                     np.sign(sensor_values[3] - sensor_values[1]))
-                print("rotate of ", angle)
-                self.thread = rotate(self.thymio, angle)
+                rotate(self.thymio, angle, verbose=True)
                 if angle >= 0:
                     rotated = EventEnum.LEFT
                 else:
                     rotated = EventEnum.RIGHT
             elif (sensor_values[3] > 0) or (sensor_values[4] > 0):  # right side
-                print("rotate of ", -self.angle_avoidance)
-                self.thread = rotate(self.thymio, angle=-self.angle_avoidance)
+                rotate(self.thymio, angle=-self.angle_avoidance, verbose=True)
                 rotated = EventEnum.RIGHT
             elif (sensor_values[0] > 0) or (sensor_values[1] > 0):  # left side
-                print("rotate of ", self.angle_avoidance)
-                self.thread = rotate(self.thymio, angle=self.angle_avoidance)
+                rotate(self.thymio, angle=self.angle_avoidance, verbose=True)
                 rotated = EventEnum.LEFT
             elif sensor_values[2] > 0:  # center
                 print("rotate of ", self.angle_avoidance)
-                self.thread = rotate(self.thymio, angle=self.angle_avoidance)
+                rotate(self.thymio, angle=self.angle_avoidance, verbose=True)
                 rotated = EventEnum.LEFT
             else:
                 break
 
-            while self.thread.is_alive():
-                time.sleep(self.interval_sleep)
-
-        while True:
+        while True:  # check global obstacles
             if self.__check_global_obstacles() < self.distance_avoidance:
                 # if no obstacle in the way, starts moving forward
-                print("forward of ", self.distance_avoidance)
-                self.thread = advance(self.thymio, distance=self.distance_avoidance)
-                while self.thread.is_alive():
-                    time.sleep(self.interval_sleep)
+                advance(self.thymio, distance=self.distance_avoidance, verbose=True)
             else:
                 # if obstacle in the way
-                print("rotate of ", 180.0)
-                self.thread = rotate(self.thymio, angle=180.0)
-                while self.thread.is_alive():
-                    time.sleep(self.interval_sleep)
+                rotate(self.thymio, angle=180.0, verbose=True)
                 self.__obstacle_avoidance()
                 return
 
-            # after advancing rotate of 90 degrees and verify the situation
+            # after advancing, rotate of 90 degrees and verify the situation
             angle = 90.0
             if rotated == EventEnum.LEFT:
                 angle *= -1
-            print("rotate of ", angle)
-            self.thread = rotate(self.thymio, angle=angle)
-            while self.thread.is_alive():
-                time.sleep(self.interval_sleep)
+            rotate(self.thymio, angle=angle, verbose=True)
             sensor_values = self.sensor_handler.sensor_raw()["sensor"]
             if sensor_values[2] == 0 and sensor_values[0] <= self.wall_threshold and sensor_values[
                 4] <= self.wall_threshold:
                 # if no local obstacle anymore, go forward and stop local avoidance
-                print("forward of ", self.distance_avoidance)
-                self.thread = advance(self.thymio, distance=self.distance_avoidance)
-                while self.thread.is_alive():
-                    time.sleep(self.interval_sleep)
+                advance(self.thymio, distance=self.distance_avoidance, verbose=True)
                 return
             else:
                 # otherwise rotate back and continue
-                print("rotate of ", -angle)
-                self.thread = rotate(self.thymio, angle=-angle)
-                while self.thread.is_alive():
-                    time.sleep(self.interval_sleep)
+                rotate(self.thymio, angle=-angle, verbose=True)
 
     def __check_global_obstacles(self):
         obstacle = False

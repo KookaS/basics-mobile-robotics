@@ -91,6 +91,7 @@ def A_Star(start, goal, final_occupancy_grid):
 
     # The set of visited nodes that need to be (re-)expanded, i.e. for which the neighbors need to be explored
     # Initially, only the start node is known.
+    print("Start:", start)
     openSet = [start]
 
     # The set of visited nodes that no longer need to be expanded.
@@ -117,6 +118,7 @@ def A_Star(start, goal, final_occupancy_grid):
 
         # If the goal is reached, reconstruct and return the obtained path
         if current == goal:
+            # print("Path", closedSet)
             return reconstruct_path(cameFrom, current)
 
         openSet.remove(current)
@@ -154,6 +156,4 @@ def A_Star(start, goal, final_occupancy_grid):
 
     # Open set is empty but goal was never reached
     print("No path found to goal")
-
-    new_closedSet = np.array([closedSet[0][1:], closedSet[1][1:]]) # closed set without the origin
-    return [], new_closedSet
+    return [], closedSet

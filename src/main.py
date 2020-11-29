@@ -4,7 +4,7 @@ import pprint
 import time
 
 from src.displacement.management import EventHandler
-from src.sensors.tuning import MotionTuning
+from src.sensors.tuning import MotionTuning, VelocityTuning
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
 
@@ -30,19 +30,23 @@ def print_thymio(thymio: Thymio):
 
 
 def main():
-    # test_camera()
+    # test_camera() # Position not accurate!!!
     # camera_tweak()
     # time.sleep(30)
-    """while True:
+
+    """
+    while True:
         temp = record_project()
-        print(temp)"""
+        print(temp)
+    """
 
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
 
+    # VelocityTuning(th)
     # MotionTuning(thymio=th, distance=15, angle=180.0)
-    EventHandler(th, interval_check=0.1, interval_sleep=0.05)  # check every interval_check seconds to change scenarios
-    # record_project()
+    EventHandler(th, interval_check=1, interval_sleep=0.05,
+                 goal_threshold=1)  # check every interval_check seconds to change scenarios
 
     print("END OF MAIN!")
 

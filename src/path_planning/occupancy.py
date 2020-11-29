@@ -34,8 +34,8 @@ def display_map(grid, type_map):
     ax.set_yticks(minor_ticks_y, minor=True)
     ax.grid(which='minor', alpha=0.2)
     ax.grid(which='major', alpha=0.5)
-    ax.set_ylim([0, (LENGTH-1)])
-    ax.set_xlim([0, (WIDTH-1)])
+    ax.set_ylim([0, (LENGTH - 1)])
+    ax.set_xlim([0, (WIDTH - 1)])
     ax.grid(True)
 
     if type_map == OCCUPANCY:
@@ -51,7 +51,7 @@ def display_map(grid, type_map):
         cmap = colors.ListedColormap(['white', 'black'])
 
         # Displaying the map
-        ax.imshow(grid, cmap=cmap, extent=[0, (WIDTH-1), 0, (LENGTH-1)])
+        ax.imshow(grid, cmap=cmap, extent=[0, (WIDTH - 1), 0, (LENGTH - 1)])
         plt.title("Localization grid")
 
     return fig, ax
@@ -93,71 +93,71 @@ def create_localization_grid():
     localization_grid = np.zeros((LENGTH, WIDTH))
 
     localization_grid[0, :] = [1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1]
-                               #0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0]
+    # 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0]
     localization_grid[1, :] = [0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-                               #1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1]
+    # 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1]
     localization_grid[2, :] = [0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0]
-                               #0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0]
+    # 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0]
     localization_grid[3, :] = [1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1]
-                               #0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]
+    # 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]
     localization_grid[4, :] = [1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1]
-                               #1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1]
+    # 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1]
     localization_grid[5, :] = [1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0]
-                               #0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0]
+    # 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0]
     localization_grid[6, :] = [0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0]
-                               #0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0]
+    # 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0]
     localization_grid[7, :] = [0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
-                               #1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1]
+    # 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1]
     localization_grid[8, :] = [0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0]
-                               #0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0]
+    # 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0]
     localization_grid[9, :] = [0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1]
-                               #0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1]
+    # 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1]
     localization_grid[10, :] = [1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0]
-                                #0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0]
+    # 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0]
     localization_grid[11, :] = [0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0]
-                                #1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0]
+    # 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0]
     localization_grid[12, :] = [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1]
-                               # 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0]
+    # 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0]
     localization_grid[13, :] = [0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0]
-                               # 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1]
+    # 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1]
     localization_grid[14, :] = [1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1]
-                                #0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0]
+    # 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0]
 
     localization_grid[15, :] = [0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
-                                #1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1]
+    # 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1]
     localization_grid[16, :] = [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1]
-                                #1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1]
+    # 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1]
     localization_grid[17, :] = [1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1]
-                                #0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0]
+    # 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0]
     localization_grid[18, :] = [0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1]
-                                #0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1]
+    # 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1]
     localization_grid[19, :] = [0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0]
-                                #1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1]
+    # 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1]
     localization_grid[20, :] = [1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0]
-                                #1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0]
+    # 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0]
     localization_grid[21, :] = [0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1]
-                                #1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1]
+    # 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1]
     localization_grid[22, :] = [1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1]
-                                #0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0]
+    # 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0]
     localization_grid[23, :] = [0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0]
-                                #1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0]
+    # 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0]
     localization_grid[24, :] = [1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1]
-                                #0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]
+    # 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]
     localization_grid[25, :] = [0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1]
-                                #1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0]
+    # 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0]
     localization_grid[26, :] = [0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0]
-                                #0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0]
+    # 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0]
     localization_grid[27, :] = [1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1]
-                                #0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1]
+    # 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1]
     localization_grid[28, :] = [0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0]
-                                #1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0]
+    # 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0]
     localization_grid[29, :] = [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0]
-                                #0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0]
+    # 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0]
     localization_grid[30, :] = [1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1]
-                                #1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0]
+    # 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0]
 
     localization_grid[31, :] = [0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0]
-                                #1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1]
+    # 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1]
     '''
     localization_grid[32, :] = [0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0,
                                 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0]
@@ -200,7 +200,7 @@ def increased_obstacles_map(occupancy_grid):
             if occupancy_grid[i, j] == OCCUPIED:
                 increased_occupancy_grid[i:i + 7, j:j + 7] = np.ones([7, 7])
 
-    final_occupancy_grid = increased_occupancy_grid[3:(WIDTH+2), 3:(LENGTH+2)]
+    final_occupancy_grid = increased_occupancy_grid[3:(WIDTH + 2), 3:(LENGTH + 2)]
     return final_occupancy_grid
 
 
@@ -213,16 +213,16 @@ def display_global_path(start, goal, path, occupancy_grid):
     ax_astar.plot(path[0], path[1], marker="o", color='blue')
     ax_astar.scatter(start[0], start[1], marker="o", color='green', s=200)
     ax_astar.scatter(goal[0], goal[1], marker="o", color='purple', s=200)
-    ax_astar.set_ylim(ax_astar.get_ylim()[::-1])
-    ax_astar.set_ylabel('x axis')
-    ax_astar.set_xlabel('y axis')
+    # ax_astar.set_ylim(ax_astar.get_ylim()[::-1])
+
+    ax_astar.set_ylabel('y axis')
+    ax_astar.set_xlabel('x axis')
     plt.show()
 
 
 def create_grid():
     occupancy_grid = create_occupancy_grid()
     # display_map(occupancy_grid.transpose(), OCCUPANCY)
-
 
     # localization_grid = create_localization_grid()
     # display_map(localization_grid, LOCALIZATION)
@@ -233,9 +233,66 @@ def create_grid():
     return final_occupancy_grid
 
 
+def path_to_command_thymio(path):
+    RIGHT = 0
+    LEFT = 1
+    STRAIGHT = 2
+
+    current_x = path[0][0]
+    current_y = path[1][0]
+
+    next_x = path[0][1]
+    next_y = path[1][1]
+
+    # next-prev
+    delta_x = path[0][1] - path[0][0]
+    delta_y = path[1][1] - path[1][0]
+
+    # delat_x = 0 and delta_y = -/+ 1 (or delat_x = -/+ 1 and delta_y = 0): go straight
+    turn = STRAIGHT
+
+    # delat_x = -1 and delta_y = 1 (or delat_x = 1 and delta_y = -1): turn to the right
+    if delta_x * delta_y < 0:
+        turn = RIGHT
+
+    # delat_x = -1 and delta_y = -1 (or delat_x = 1 and delta_y = 1): turn to the left
+    if delta_x * delta_y == 1:
+        turn = LEFT
+
+    new_path = np.array([path[0][1:], path[1][1:]])
+
+    return turn, new_path
+
+
+def full_path_to_points(path):
+    points_x = [path[0][0]]
+    points_y = [path[1][0]]
+
+    new_path = path
+    prev_turn, new_path = path_to_command_thymio(new_path)
+
+    for i in range(len(new_path[0]) - 1):
+
+        new_turn, new_path = path_to_command_thymio(new_path)
+
+        if new_turn != prev_turn:
+            points_x.append(path[0][i + 1])
+            points_y.append(path[1][i + 1])
+
+        prev_turn = new_turn
+
+    points_x.append(path[0][-1])
+    points_y.append(path[1][-1])
+    points = [points_x, points_y]
+
+    return points
+
+
 def display_occupancy(final_occupancy_grid, position, goal):
     # Run the A* algorithm
-    path = A_Star(position, goal, final_occupancy_grid)
+    path = A_Star(position, goal, final_occupancy_grid)  # all steps in path
     path = np.array(path).reshape(-1, 2).transpose()
-    display_global_path(position, goal, path, final_occupancy_grid.transpose())
-    return path
+    new_path = full_path_to_points(path)  # concatenated path
+    display_global_path(position, goal, new_path, final_occupancy_grid)
+    new_path = np.delete(new_path, 0, 1)
+    return new_path
