@@ -33,16 +33,15 @@ def main():
     # test_camera()
     # camera_tweak()
     # time.sleep(30)
-    """
-    while True:
+    """while True:
         temp = record_project()
-        print(temp[2])
-    """
+        print(temp)"""
+
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
 
     # MotionTuning(thymio=th, distance=15, angle=180.0)
-    EventHandler(th, interval_check=0.1, interval_sleep=0.1)  # check every interval_check seconds to change scenarios
+    EventHandler(th, interval_check=0.1, interval_sleep=0.05)  # check every interval_check seconds to change scenarios
     # record_project()
 
     print("END OF MAIN!")

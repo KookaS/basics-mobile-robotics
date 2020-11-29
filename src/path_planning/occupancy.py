@@ -214,11 +214,13 @@ def display_global_path(start, goal, path, occupancy_grid):
     ax_astar.scatter(start[0], start[1], marker="o", color='green', s=200)
     ax_astar.scatter(goal[0], goal[1], marker="o", color='purple', s=200)
     ax_astar.set_ylim(ax_astar.get_ylim()[::-1])
+    ax_astar.set_ylabel('x axis')
+    ax_astar.set_xlabel('y axis')
     plt.show()
 
 
 def create_grid():
-    # occupancy_grid = create_occupancy_grid()
+    occupancy_grid = create_occupancy_grid()
     # display_map(occupancy_grid.transpose(), OCCUPANCY)
 
 

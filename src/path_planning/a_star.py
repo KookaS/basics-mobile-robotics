@@ -57,7 +57,7 @@ def A_Star(start, goal, final_occupancy_grid):
     pos = np.empty(x.shape + (2,))
     # x.shape = (LENGTH,WIDTH)
     # x.shape + (2,) = (LENGTH,WIDTH,2)
-    pos[:, :, 0] = x;
+    pos[:, :, 0] = x
     pos[:, :, 1] = y
     # pos.shape = (1890, 2)
     pos = np.reshape(pos, (x.shape[0] * x.shape[1], 2))
