@@ -30,7 +30,7 @@ def print_thymio(thymio: Thymio):
 
 
 def main():
-    # test_camera()
+    test_camera()
     # camera_tweak()
     # time.sleep(30)
 

@@ -4,26 +4,22 @@ import time
 import numpy as np
 from enum import Enum
 
-from src.displacement.movement import stop, advance, rotate
+from src.displacement.movement import stop, rotate, advance_time, move
 from src.displacement.planning import update_path
 from src.kalman.kalmann_filter import kalman_filter
 from src.local_avoidance.obstacle import ObstacleAvoidance
 from src.path_planning.localization import Localization
-from src.path_planning.occupancy import create_grid, display_occupancy
+from src.path_planning.occupancy import display_occupancy
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from src.vision.camera import record_project
-import matplotlib.pyplot as plt
 
 
 class EventEnum(Enum):
     """
     This is a class based on enumeration to define constants in a clean way.
     """
-    GLOBAL = 0
-    LOCAL = 1
-    STOP = 2
-    RECORD = 3
+    RECORD = 0
 
 
 class EventHandler:
@@ -40,7 +36,7 @@ class EventHandler:
         self.obstacle_threshold = obstacle_threshold
         self.stop_threshold = stop_threshold
         self.sensor_handler = SensorHandler(self.thymio)
-        self.covariance = 1000 * np.ones([3, 3])
+        self.covariance = 1 * np.ones([3, 3])
         self.thymio_speed_to_mms = 0.4347
         self.kalman_time = time.time()
         self.ts = 0
@@ -62,110 +58,72 @@ class EventHandler:
         self.final_occupancy_grid, self.goal = self.localize.localize()
         self.__camera_handler()
         self.position = [0, 0, 0]
-        self.__kalman_handler(True)
-
+        self.position, self.covariance = kalman_filter(self.camera_measure, self.position,
+                                                       self.covariance, 0, 0, True)
         print("initial positions: ", self.position)
+        self.__global_init()
 
-        threading.Timer(self.interval_check, self.__check_handler).start()
-
-        self.state = EventEnum.STOP.value
-        self.running[EventEnum.STOP.value] = True
-        self.__stop_handler()
-
-    def __check_handler(self):
-        """
-        Handles the different scenarios in which the robot will be.
-        This function is called on it's own thread every interval_check seconds.
-        """
-        # print(threading.active_count())
-        sensor_values = self.sensor_handler.sensor_raw()
-        # print(sensor_values)
-
-        sensor = np.amax(sensor_values["sensor"]).astype(int)  # RANDOM CONDITION FOR TESTING
-        if self.state != EventEnum.GLOBAL.value and sensor <= self.obstacle_threshold:  # CHECK HERE FOR THE GLOBAL CONDITION
-            print("changing to GLOBAL!!")
-            self.running[self.state] = False
-            self.running[EventEnum.GLOBAL.value] = True
-            self.state = EventEnum.GLOBAL.value
-            threading.Timer(self.interval_sleep, self.__global_thread_init).start()
-
-        elif self.state != EventEnum.LOCAL.value and sensor > self.obstacle_threshold:  # CHECK HERE FOR THE LOCAL CONDITION
-            print("changing to LOCAL!!")
-            self.running[self.state] = False
-            self.running[EventEnum.LOCAL.value] = True
-            self.state = EventEnum.LOCAL.value
-            threading.Timer(self.interval_sleep, self.__local_handler).start()
-            return  # stop the code so that __check_handler is called after avoiding objects
-
-        elif self.state != EventEnum.STOP.value and sensor >= self.stop_threshold:  # CHECK HERE FOR THE STOP CONDITION
-            print("changing to STOP!!")
-            self.running[self.state] = False
-            self.running[EventEnum.STOP.value] = True
-            self.state = EventEnum.STOP.value
-            threading.Timer(self.interval_sleep, self.__stop_handler).start()
-
-        time.sleep(self.interval_sleep)
-        self.__check_handler()
-        return
-
-    def __global_thread_init(self):
+    def __global_init(self):
         self.goal = (15, 15)
-        path = display_occupancy(self.final_occupancy_grid, (int(self.position[0]), int(self.position[1])), self.goal)
-        print(path)
-        self.__global_handler(path)
+        self.path = display_occupancy(self.final_occupancy_grid, (int(self.position[0]), int(self.position[1])),
+                                      self.goal)
+        self.__global_handler()
 
-    def __global_handler(self, path):
+    def __global_handler(self):
         """
         Manages the thread for the GLOBAL scenario.
         This function is called on it's own thread every interval_sleep seconds.
         """
         # print("inside __global_handler")
-        # print(path)
-        delta_r, delta_theta = update_path(path, self.position[0], self.position[1], self.position[2])
+        print("path_x: ", self.path[0])
+        print("path_y: ", self.path[1])
+        delta_r, delta_theta = update_path(self.path, self.position[0], self.position[1], self.position[2])
 
-        # Apply rotation, then displacement
+        # Apply rotation
         self.kalman_time = time.time()
-        print("rotate of ", delta_theta)
-        thread = rotate(self.thymio, delta_theta)
-        while thread.is_alive():
-            time.sleep(self.interval_sleep)
+        rotate(self.thymio, delta_theta, verbose=True)
         self.__kalman_handler(False)
 
+        # apply displacement
         self.kalman_time = time.time()
-        print("advance ", delta_r)
-        thread = advance(self.thymio, delta_r)
+        l_speed, r_speed, distance_time = advance_time(delta_r)
+        start_advancing = time.time()
+        move(self.thymio, l_speed, r_speed)
         self.running[EventEnum.RECORD.value] = True
-        threading.Timer(self.interval_check, self.__record_handler).start()
-        while thread.is_alive():
+        threading.Thread(target=self.__record_handler).start()
+
+        while start_advancing - time.time() < distance_time:
+            # check if local avoidance needed
+            sensor_values = self.sensor_handler.sensor_raw()
+            if np.amax(sensor_values["sensor"]).astype(int) < self.obstacle_threshold:
+                stop(self.thymio)
+                self.__local_handler()
+                self.__global_init()
             time.sleep(self.interval_sleep)
-        self.running[EventEnum.RECORD.value] = False
-        # TODO remove below 30 elements
+
+        # threading.Timer(self.interval_check, self.__record_handler).start()
+        self.record_right = filter(lambda number: number < 30, self.record_right)  # removes the speeds below 30
+        self.record_left = filter(lambda number: number < 30, self.record_left)
+        print("right records: ", self.record_right)
+        print("left records: ", self.record_left)
+
         self.__kalman_handler(True)
+        self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
 
-        new_path = np.delete(path, 0, 1)  # removes the step done from the lists
-
-        if self.running[EventEnum.GLOBAL.value]:
+        if self.path.shape[0]:
             time.sleep(self.interval_sleep)
-            self.__global_handler(new_path)
+            self.__global_handler()
 
     def __local_handler(self):
         """
         Manages the thread for the LOCAL scenario.
         This function is called on it's own thread every interval_sleep seconds.
         """
+        print("inside __local_handler")
         ObstacleAvoidance(self.thymio, self.final_occupancy_grid, self.position)
-        threading.Timer(self.interval_check, self.__check_handler).start()  # restart checking the correct state
-
-        self.state = EventEnum.STOP.value
-        self.running[EventEnum.STOP.value] = True
-        self.__stop_handler()
+        self.__global_handler()
 
     def __stop_handler(self):
-        """
-        Manages the thread for the STOP scenario.
-        This function is called on it's own thread every interval_sleep seconds.
-        """
-        # print("inside __stop_handler")
         stop(self.thymio, verbose=True)
 
     def __kalman_handler(self, measurement):
@@ -202,31 +160,3 @@ class EventHandler:
         if self.running[EventEnum.RECORD.value]:
             time.sleep(self.interval_sleep)
             self.__record_handler()
-
-    """def __kalman_handler(self):
-        # print("inside __kalman_handler")
-        speed = self.sensor_handler.speed()
-        now = time.time()
-        ts = now - self.kalman_time
-        print("kalman ts", ts)
-        self.kalman_time = now
-        self.delta_sl = speed['left_speed'] * ts / self.thymio_speed_to_mms / 1000
-        self.delta_sr = speed['right_speed'] * ts / self.thymio_speed_to_mms / 1000
-
-        self.position, self.covariance = kalman_filter(self.camera_measure, self.position,
-                                                       self.covariance,
-                                                       self.delta_sr, self.delta_sl)
-        print("kalman position ", self.position)
-
-        if self.running[EventEnum.KALMAN.value]:
-            time.sleep(self.interval_sleep)
-            self.__kalman_handler()
-
-    def __camera_handler(self):
-        # print("inside __camera_handler")
-        self.camera_measure = record_project()
-        print("new camera ", self.camera_measure)
-
-        if self.running[EventEnum.CAMERA.value]:
-            time.sleep(self.interval_sleep)
-            self.__camera_handler()"""

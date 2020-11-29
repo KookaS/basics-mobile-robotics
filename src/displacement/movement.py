@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import os
 from src.thymio.Thymio import Thymio
@@ -46,20 +48,15 @@ def stop(thymio: Thymio, verbose=False):
     thymio.set_var("motor.right.target", 0)
 
 
-def rotate(thymio: Thymio, angle: float, verbose: bool = False, function=stop, args=None, kwargs=None):
+def rotate(thymio: Thymio, angle: float, verbose: bool = False):
     """
     Rotates of the desired angle
 
-    :param function:    function to execute at the end of rotation, default stop
-    :param args:        array of non-keyworded arguments of function
-    :param kwargs:      set of keyworded arguments
     :param thymio:      the class to which the robot is referred to
     :param angle:       angle in radians by which we want to rotate, positive or negative
     :param verbose:     printing the speed in the terminal
     :return: timer to check if it is still alive or not
     """
-    args_f = args if args is not None else [thymio]
-    kwargs_f = kwargs if kwargs is not None else {}
     l_speed = -int(np.sign(angle))
     r_speed = int(np.sign(angle))
     turn_time = float(os.getenv("HALF_TURN_TIME")) * angle / 180.0
@@ -68,14 +65,12 @@ def rotate(thymio: Thymio, angle: float, verbose: bool = False, function=stop, a
     if verbose:
         print("\t\t Rotate speed & time : ", l_speed, r_speed, turn_time)
 
-    timer = Timer(interval=turn_time, function=function, args=args_f, kwargs=kwargs_f)
     move(thymio, l_speed, r_speed)
-    timer.start()
-    return timer
+    time.sleep(turn_time)
+    stop(thymio)
 
 
-def advance(thymio: Thymio, distance: float, speed_ratio: int = 1, verbose: bool = False, function=stop, args=None,
-            kwargs=None):
+def advance(thymio: Thymio, distance: float, speed_ratio: int = 1, verbose: bool = False):
     """
     Moves straight of a desired distance
 
@@ -88,17 +83,18 @@ def advance(thymio: Thymio, distance: float, speed_ratio: int = 1, verbose: bool
     :param verbose:     printing the speed in the terminal
     :return: timer to check if it is still alive or not
     """
-    args_f = args if args is not None else [thymio]
-    kwargs_f = kwargs if kwargs is not None else {}
-    l_speed = speed_ratio * int(np.sign(distance))
-    r_speed = speed_ratio * int(np.sign(distance))
-    distance_time = float(os.getenv("DISTANCE_TIME")) * distance / speed_ratio
-
+    l_speed, r_speed, distance_time = advance_time(distance, speed_ratio)
     # Printing the speeds if requested
     if verbose:
         print("\t\t Advance speed & time : ", l_speed, r_speed, distance_time)
 
-    timer = Timer(interval=distance_time, function=function, args=args_f, kwargs=kwargs_f)
     move(thymio, l_speed, r_speed)
-    timer.start()
-    return timer
+    time.sleep(distance_time)
+    stop(thymio)
+
+
+def advance_time(distance: float, speed_ratio: int = 1):
+    l_speed = speed_ratio * int(np.sign(distance))
+    r_speed = speed_ratio * int(np.sign(distance))
+    distance_time = float(os.getenv("DISTANCE_TIME")) * distance / speed_ratio
+    return l_speed, r_speed, distance_time

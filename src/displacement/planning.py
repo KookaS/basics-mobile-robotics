@@ -11,11 +11,7 @@ from src.thymio.Thymio import Thymio
 
 def update_path(path, x, y, theta):
     CONST_DISP = 2.5  # distance in cm between two squares
-    # TODO wait for thread to die before new thread
     if path.shape[0] and path.shape[1]:
-        print("x,y: ", x, y)
-        print("path_x: ", path[0])
-        print("path_y: ", path[1])
         target_x = path[0][0]
         target_y = path[1][0]
         delta_x = target_x - x

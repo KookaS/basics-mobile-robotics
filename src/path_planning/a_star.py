@@ -118,7 +118,7 @@ def A_Star(start, goal, final_occupancy_grid):
 
         # If the goal is reached, reconstruct and return the obtained path
         if current == goal:
-            print("Path", closedSet)
+            # print("Path", closedSet)
             return reconstruct_path(cameFrom, current)
 
         openSet.remove(current)
