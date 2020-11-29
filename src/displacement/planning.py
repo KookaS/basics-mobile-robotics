@@ -11,7 +11,7 @@ from src.thymio.Thymio import Thymio
 
 def update_path(path, x, y, theta):
     CONST_DISP = 2.5  # distance in cm between two squares
-    if path.shape[0] and path.shape[1]:
+    if len(path[0]) and len(path[1]):
         target_x = path[0][0]
         target_y = path[1][0]
         delta_x = target_x - x
@@ -19,8 +19,8 @@ def update_path(path, x, y, theta):
         # print("sign: ", np.sign(delta_x))
         # print("sign: ", np.sign(delta_x))
 
-        print("cases en x: ", int(np.sign(delta_x)))
-        print("cases en y: ", int(np.sign(delta_y)))
+        # print("cases en x: ", int(np.sign(delta_x)))
+        # print("cases en y: ", int(np.sign(delta_y)))
         delta_x = target_x - x
         delta_y = target_y - y
         delta_x_cm = delta_x * CONST_DISP

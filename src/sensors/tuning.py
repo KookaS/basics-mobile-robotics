@@ -40,9 +40,17 @@ class MotionTuning:
         Timer(interval=self.interval_sleep, function=self.__tune_handler).start()
 
 
-class SensorTuning:
+class VelocityTuning:
+    """
     """
 
+    def __init__(self, thymio: Thymio):
+        self.thymio = thymio
+
+
+class SensorTuning:
     """
+    """
+
     def __init__(self, thymio: Thymio):
         self.thymio = thymio

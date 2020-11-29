@@ -15,8 +15,8 @@ low_yellow = np.array([7, 37, 255])
 up_yellow = np.array([31, 139, 255])
 low_red = np.array([178, 179, 0])
 up_red = np.array([[255, 255, 255]])
-low_blue = np.array([85, 95, 113])
-up_blue = np.array([110, 255, 174])
+low_blue = np.array([98, 134, 106])
+up_blue = np.array([109, 225, 174])
 LENGTH = 32
 WIDTH = 29
 

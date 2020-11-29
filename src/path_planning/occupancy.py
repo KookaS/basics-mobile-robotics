@@ -265,7 +265,7 @@ def path_to_command_thymio(path):
 
 def full_path_to_points(path):
     points_x = [path[0][0]]
-    points_y = [path[0][1]]
+    points_y = [path[1][0]]
 
     new_path = path
     prev_turn, new_path = path_to_command_thymio(new_path)
@@ -290,9 +290,8 @@ def full_path_to_points(path):
 def display_occupancy(final_occupancy_grid, position, goal):
     # Run the A* algorithm
     path = A_Star(position, goal, final_occupancy_grid)  # all steps in path
+    path = np.array(path).reshape(-1, 2).transpose()
     new_path = full_path_to_points(path)  # concatenated path
-    # path = np.array(path).reshape(-1, 2).transpose()
     display_global_path(position, goal, new_path, final_occupancy_grid.transpose())
-    # path = np.delete(path, 0, 1)
     new_path = np.delete(new_path, 0, 1)
     return new_path

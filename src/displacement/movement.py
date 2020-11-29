@@ -59,11 +59,12 @@ def rotate(thymio: Thymio, angle: float, verbose: bool = False):
     """
     l_speed = -int(np.sign(angle))
     r_speed = int(np.sign(angle))
-    turn_time = float(os.getenv("HALF_TURN_TIME")) * angle / 180.0
+    turn_time = float(os.getenv("HALF_TURN_TIME")) * abs(angle) / 180.0
 
     # Printing the speeds if requested
     if verbose:
-        print("\t\t Rotate speed & time : ", l_speed, r_speed, turn_time)
+        # print("\t\t Rotate speed & time : ", l_speed, r_speed, turn_time)
+        print("\t\t Rotate of degrees : ", angle)
 
     move(thymio, l_speed, r_speed)
     time.sleep(turn_time)
@@ -86,7 +87,8 @@ def advance(thymio: Thymio, distance: float, speed_ratio: int = 1, verbose: bool
     l_speed, r_speed, distance_time = advance_time(distance, speed_ratio)
     # Printing the speeds if requested
     if verbose:
-        print("\t\t Advance speed & time : ", l_speed, r_speed, distance_time)
+        # print("\t\t Advance speed & time : ", l_speed, r_speed, distance_time)
+        print("\t\t Advance of cm: ", distance)
 
     move(thymio, l_speed, r_speed)
     time.sleep(distance_time)
@@ -96,5 +98,5 @@ def advance(thymio: Thymio, distance: float, speed_ratio: int = 1, verbose: bool
 def advance_time(distance: float, speed_ratio: int = 1):
     l_speed = speed_ratio * int(np.sign(distance))
     r_speed = speed_ratio * int(np.sign(distance))
-    distance_time = float(os.getenv("DISTANCE_TIME")) * distance / speed_ratio
+    distance_time = float(os.getenv("DISTANCE_TIME")) * abs(distance) / speed_ratio
     return l_speed, r_speed, distance_time

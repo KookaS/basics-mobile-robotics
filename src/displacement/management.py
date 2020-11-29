@@ -28,8 +28,9 @@ class EventHandler:
             EventHandler(thymio=th, interval_check=5)
     """
 
-    def __init__(self, thymio: Thymio, interval_check=0.2, interval_sleep=0.05, obstacle_threshold=2000,
-                 stop_threshold=3500, goal=(20, 15)):
+    def __init__(self, thymio: Thymio, interval_check=0.1, interval_sleep=0.05, obstacle_threshold=2000,
+                 stop_threshold=3500, goal_threshold=2):
+        self.goal_threshold = goal_threshold  # nb of cubes around the goal
         self.thymio: Thymio = thymio
         self.interval_check = interval_check
         self.interval_sleep = interval_sleep
@@ -45,7 +46,7 @@ class EventHandler:
         self.running = []
         self.record_left = [0]
         self.record_right = [0]
-        self.goal = goal
+        self.goal = (15, 15)
         for _ in EventEnum:
             self.running.append(False)
         self.__check_thread_init()
@@ -54,6 +55,7 @@ class EventHandler:
         """
         Initialize the thread for checking scenarios, then pause it until next call.
         """
+        # TODO add goal detection
         self.localize = Localization()
         self.final_occupancy_grid, self.goal = self.localize.localize()
         self.__camera_handler()
@@ -80,37 +82,40 @@ class EventHandler:
         delta_r, delta_theta = update_path(self.path, self.position[0], self.position[1], self.position[2])
 
         # Apply rotation
-        self.kalman_time = time.time()
         rotate(self.thymio, delta_theta, verbose=True)
-        self.__kalman_handler(False)
 
         # apply displacement
-        self.kalman_time = time.time()
+
         l_speed, r_speed, distance_time = advance_time(delta_r)
-        start_advancing = time.time()
-        move(self.thymio, l_speed, r_speed)
+        print("l_speed_ratio, r_speed_ratio, distance_time: ", l_speed, r_speed, distance_time)
+        self.kalman_time = time.time()
+        move(self.thymio, l_speed, r_speed, verbose=True)
         self.running[EventEnum.RECORD.value] = True
         threading.Thread(target=self.__record_handler).start()
 
-        while start_advancing - time.time() < distance_time:
+        # check if at the next point
+        while abs(self.position[0] - self.path[0][0]) >= self.goal_threshold or abs(
+                self.position[1] - self.path[1][0]) >= self.goal_threshold:
+            print("still not at next point!")
+            self.__kalman_handler(False)
             # check if local avoidance needed
             sensor_values = self.sensor_handler.sensor_raw()
-            if np.amax(sensor_values["sensor"]).astype(int) < self.obstacle_threshold:
+            if np.amax(sensor_values["sensor"]).astype(int) >= self.obstacle_threshold:
                 stop(self.thymio)
+                self.running[EventEnum.RECORD.value] = False
+                self.__record_reset()
                 self.__local_handler()
                 self.__global_init()
-            time.sleep(self.interval_sleep)
+            time.sleep(self.interval_check)
 
-        # threading.Timer(self.interval_check, self.__record_handler).start()
-        self.record_right = filter(lambda number: number < 30, self.record_right)  # removes the speeds below 30
-        self.record_left = filter(lambda number: number < 30, self.record_left)
-        print("right records: ", self.record_right)
-        print("left records: ", self.record_left)
-
+        print("reaching next point!")
+        self.running[EventEnum.RECORD.value] = False
+        # self.record_right = filter(lambda number: number < 30, self.record_right)  # removes the speeds below 30
+        # self.record_left = filter(lambda number: number < 30, self.record_left)
         self.__kalman_handler(True)
         self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
 
-        if self.path.shape[0]:
+        if len(self.path[0]):
             time.sleep(self.interval_sleep)
             self.__global_handler()
 
@@ -133,11 +138,16 @@ class EventHandler:
         print("kalman ts", ts)
         speed_left = np.mean(self.record_left)
         speed_right = np.mean(self.record_right)
-        self.record_right = [0]
-        self.record_left = [0]
+        # print("right records: ", self.record_right)
+        # print("left records: ", self.record_left)
+        print("left average: ", speed_left)
+        print("right average: ", speed_right)
+        self.__record_reset()
         # TODO check self.thymio_speed_to_mms
-        self.delta_sl = speed_left * ts / self.thymio_speed_to_mms / 1000
-        self.delta_sr = speed_right * ts / self.thymio_speed_to_mms / 1000
+        self.delta_sl = speed_left * ts / self.thymio_speed_to_mms / 100000
+        self.delta_sr = speed_right * ts / self.thymio_speed_to_mms / 100000
+        print("self.delta_sl: ", self.delta_sl)
+        print("self.delta_sr: ", self.delta_sr)
 
         if measurement:
             self.__camera_handler()
@@ -154,9 +164,19 @@ class EventHandler:
 
     def __record_handler(self):
         speed = self.sensor_handler.speed()
-        self.record_right.append(speed['right_speed'])
-        self.record_left.append(speed['left_speed'])
+        right = speed['right_speed']
+        if right > 110:
+            right = 100
+        left = speed['left_speed']
+        if left > 110:
+            left = 100
+        self.record_right.append(right)
+        self.record_left.append(left)
 
         if self.running[EventEnum.RECORD.value]:
-            time.sleep(self.interval_sleep)
+            time.sleep(self.interval_sleep / 10)
             self.__record_handler()
+
+    def __record_reset(self):
+        self.record_right = []
+        self.record_left = []

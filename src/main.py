@@ -30,7 +30,7 @@ def print_thymio(thymio: Thymio):
 
 
 def main():
-    test_camera()
+    # test_camera()
     # camera_tweak()
     # time.sleep(30)
 
@@ -42,7 +42,7 @@ def main():
     time.sleep(3)  # To make sure the Thymio has had time to connect
 
     # MotionTuning(thymio=th, distance=15, angle=180.0)
-    EventHandler(th, interval_check=0.1, interval_sleep=0.05)  # check every interval_check seconds to change scenarios
+    # EventHandler(th, interval_check=1, interval_sleep=0.05)  # check every interval_check seconds to change scenarios
     # record_project()
 
     print("END OF MAIN!")
