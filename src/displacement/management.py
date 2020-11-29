@@ -4,7 +4,7 @@ import time
 import numpy as np
 from enum import Enum
 
-from src.displacement.movement import stop
+from src.displacement.movement import stop, advance, rotate
 from src.displacement.planning import update_path
 from src.kalman.kalmann_filter import kalman_filter
 from src.local_avoidance.obstacle import ObstacleAvoidance
@@ -23,8 +23,7 @@ class EventEnum(Enum):
     GLOBAL = 0
     LOCAL = 1
     STOP = 2
-    KALMAN = 3
-    CAMERA = 4
+    RECORD = 3
 
 
 class EventHandler:
@@ -41,13 +40,15 @@ class EventHandler:
         self.obstacle_threshold = obstacle_threshold
         self.stop_threshold = stop_threshold
         self.sensor_handler = SensorHandler(self.thymio)
-        self.covariance = 0.01 * np.ones([3, 3])
+        self.covariance = 1000 * np.ones([3, 3])
         self.thymio_speed_to_mms = 0.4347
         self.kalman_time = time.time()
         self.ts = 0
         self.delta_sr = 0
         self.delta_sl = 0
         self.running = []
+        self.record_left = [0]
+        self.record_right = [0]
         self.goal = goal
         for _ in EventEnum:
             self.running.append(False)
@@ -59,20 +60,13 @@ class EventHandler:
         """
         self.localize = Localization()
         self.final_occupancy_grid, self.goal = self.localize.localize()
-        self.new_camera_measure = record_project()
-        self.prev_camera_measure = [0, 0, 0]
-        self.position = self.new_camera_measure
+        self.__camera_handler()
+        self.position = [0, 0, 0]
+        self.__kalman_handler(True)
+
         print("initial positions: ", self.position)
 
         threading.Timer(self.interval_check, self.__check_handler).start()
-
-        self.state = EventEnum.KALMAN.value
-        self.running[EventEnum.KALMAN.value] = True
-        # threading.Timer(self.interval_sleep, self.__kalman_handler).start()
-
-        self.state = EventEnum.CAMERA.value
-        self.running[EventEnum.CAMERA.value] = True
-        threading.Timer(self.interval_sleep, self.__camera_handler).start()
 
         self.state = EventEnum.STOP.value
         self.running[EventEnum.STOP.value] = True
@@ -117,8 +111,8 @@ class EventHandler:
     def __global_thread_init(self):
         self.goal = (15, 15)
         path = display_occupancy(self.final_occupancy_grid, (int(self.position[0]), int(self.position[1])), self.goal)
-        new_path = np.delete(path, 0, 1)
-        self.__global_handler(new_path)
+        print(path)
+        self.__global_handler(path)
 
     def __global_handler(self, path):
         """
@@ -127,7 +121,28 @@ class EventHandler:
         """
         # print("inside __global_handler")
         # print(path)
-        new_path = update_path(self.thymio, path, self.position[0], self.position[1], self.position[2])
+        delta_r, delta_theta = update_path(path, self.position[0], self.position[1], self.position[2])
+
+        # Apply rotation, then displacement
+        self.kalman_time = time.time()
+        print("rotate of ", delta_theta)
+        thread = rotate(self.thymio, delta_theta)
+        while thread.is_alive():
+            time.sleep(self.interval_sleep)
+        self.__kalman_handler(False)
+
+        self.kalman_time = time.time()
+        print("advance ", delta_r)
+        thread = advance(self.thymio, delta_r)
+        self.running[EventEnum.RECORD.value] = True
+        threading.Timer(self.interval_check, self.__record_handler).start()
+        while thread.is_alive():
+            time.sleep(self.interval_sleep)
+        self.running[EventEnum.RECORD.value] = False
+        # TODO remove below 30 elements
+        self.__kalman_handler(True)
+
+        new_path = np.delete(path, 0, 1)  # removes the step done from the lists
 
         if self.running[EventEnum.GLOBAL.value]:
             time.sleep(self.interval_sleep)
@@ -153,7 +168,42 @@ class EventHandler:
         # print("inside __stop_handler")
         stop(self.thymio, verbose=True)
 
-    def __kalman_handler(self):
+    def __kalman_handler(self, measurement):
+        # print("inside __kalman_handler")
+        now = time.time()
+        ts = now - self.kalman_time
+        print("kalman ts", ts)
+        speed_left = np.mean(self.record_left)
+        speed_right = np.mean(self.record_right)
+        self.record_right = [0]
+        self.record_left = [0]
+        # TODO check self.thymio_speed_to_mms
+        self.delta_sl = speed_left * ts / self.thymio_speed_to_mms / 1000
+        self.delta_sr = speed_right * ts / self.thymio_speed_to_mms / 1000
+
+        if measurement:
+            self.__camera_handler()
+
+        self.position, self.covariance = kalman_filter(self.camera_measure, self.position,
+                                                       self.covariance,
+                                                       self.delta_sr, self.delta_sl, measurement)
+        print("kalman position ", self.position)
+
+    def __camera_handler(self):
+        # print("inside __camera_handler")
+        self.camera_measure = record_project()
+        print("camera position ", self.camera_measure)
+
+    def __record_handler(self):
+        speed = self.sensor_handler.speed()
+        self.record_right.append(speed['right_speed'])
+        self.record_left.append(speed['left_speed'])
+
+        if self.running[EventEnum.RECORD.value]:
+            time.sleep(self.interval_sleep)
+            self.__record_handler()
+
+    """def __kalman_handler(self):
         # print("inside __kalman_handler")
         speed = self.sensor_handler.speed()
         now = time.time()
@@ -163,7 +213,7 @@ class EventHandler:
         self.delta_sl = speed['left_speed'] * ts / self.thymio_speed_to_mms / 1000
         self.delta_sr = speed['right_speed'] * ts / self.thymio_speed_to_mms / 1000
 
-        self.position, self.covariance = kalman_filter(self.prev_camera_measure, self.new_camera_measure, self.position,
+        self.position, self.covariance = kalman_filter(self.camera_measure, self.position,
                                                        self.covariance,
                                                        self.delta_sr, self.delta_sl)
         print("kalman position ", self.position)
@@ -174,9 +224,9 @@ class EventHandler:
 
     def __camera_handler(self):
         # print("inside __camera_handler")
-        self.new_camera_measure = record_project()
-        print("new camera ", self.new_camera_measure)
+        self.camera_measure = record_project()
+        print("new camera ", self.camera_measure)
 
         if self.running[EventEnum.CAMERA.value]:
             time.sleep(self.interval_sleep)
-            self.__camera_handler()
+            self.__camera_handler()"""

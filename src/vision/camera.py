@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 
 load_dotenv()
 
-low_green = np.array([41, 51, 116])
-up_green = np.array([79, 127, 255])
-low_yellow = np.array([25, 19, 200])
-up_yellow = np.array([38, 137, 255])
+low_green = np.array([53, 46, 181])
+up_green = np.array([79, 93, 255])
+low_yellow = np.array([7, 37, 255])
+up_yellow = np.array([31, 139, 255])
 low_red = np.array([178, 179, 0])
 up_red = np.array([[255, 255, 255]])
 low_blue = np.array([85, 95, 113])
@@ -97,7 +97,7 @@ def record_project():
     # plt.show()
     # print('X', x2, 'Y', y2)
     # print('Angle', angle)
-    return [int(x2), int(y2), angle]
+    return [x2, y2, angle]
 
 
 def frame_analysis_green(fW, fH, frame, gW, gH):

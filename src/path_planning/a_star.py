@@ -118,11 +118,11 @@ def A_Star(start, goal, final_occupancy_grid):
 
         # If the goal is reached, reconstruct and return the obtained path
         if current == goal:
+            print("Path", closedSet)
             return reconstruct_path(cameFrom, current)
 
         openSet.remove(current)
         closedSet.append(current)
-        print("closedSet:", closedSet)
 
         # for each neighbor of current:
         for dx, dy, deltacost in movements:
@@ -156,7 +156,4 @@ def A_Star(start, goal, final_occupancy_grid):
 
     # Open set is empty but goal was never reached
     print("No path found to goal")
-    print("Path", closedSet)
-
-    # new_closedSet = np.array([closedSet[0][1:], closedSet[1][1:]]) # closed set without the origin
     return [], closedSet
