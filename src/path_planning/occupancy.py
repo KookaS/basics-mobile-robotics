@@ -213,9 +213,10 @@ def display_global_path(start, goal, path, occupancy_grid):
     ax_astar.plot(path[0], path[1], marker="o", color='blue')
     ax_astar.scatter(start[0], start[1], marker="o", color='green', s=200)
     ax_astar.scatter(goal[0], goal[1], marker="o", color='purple', s=200)
-    ax_astar.set_ylim(ax_astar.get_ylim()[::-1])
-    ax_astar.set_ylabel('x axis')
-    ax_astar.set_xlabel('y axis')
+    # ax_astar.set_ylim(ax_astar.get_ylim()[::-1])
+
+    ax_astar.set_ylabel('y axis')
+    ax_astar.set_xlabel('x axis')
     plt.show()
 
 
@@ -292,6 +293,6 @@ def display_occupancy(final_occupancy_grid, position, goal):
     path = A_Star(position, goal, final_occupancy_grid)  # all steps in path
     path = np.array(path).reshape(-1, 2).transpose()
     new_path = full_path_to_points(path)  # concatenated path
-    display_global_path(position, goal, new_path, final_occupancy_grid.transpose())
+    display_global_path(position, goal, new_path, final_occupancy_grid)
     new_path = np.delete(new_path, 0, 1)
     return new_path
