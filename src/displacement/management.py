@@ -1,10 +1,11 @@
+import os
 import threading
 import time
 
 import numpy as np
 from enum import Enum
 
-from src.displacement.movement import stop, rotate, advance_time, move
+from src.displacement.movement import stop, rotate, advance_time, move, rotate_time, rotate_thread, advance_thread
 from src.displacement.planning import update_path
 from src.kalman.kalmann_filter import kalman_filter
 from src.local_avoidance.obstacle import ObstacleAvoidance
@@ -36,9 +37,10 @@ class EventHandler:
         self.interval_sleep = interval_sleep
         self.obstacle_threshold = obstacle_threshold
         self.stop_threshold = stop_threshold
+        self.case_size_cm = 2.5
         self.sensor_handler = SensorHandler(self.thymio)
         self.covariance = 1 * np.ones([3, 3])
-        self.thymio_speed_to_mms = 0.4347
+        self.thymio_speed_to_mm_s = float(os.getenv("SPEED_80_TO_MM_S"))
         self.kalman_time = time.time()
         self.ts = 0
         self.delta_sr = 0
@@ -60,13 +62,16 @@ class EventHandler:
         self.final_occupancy_grid, self.goal = self.localize.localize()
         self.__camera_handler()
         self.position = [0, 0, 0]
-        self.position, self.covariance = kalman_filter(self.camera_measure, self.position,
-                                                       self.covariance, 0, 0, True)
+        conv_cam = [self.camera_measure[0] * self.case_size_cm / 100, self.camera_measure[1] * self.case_size_cm / 100,
+                    np.deg2rad(self.camera_measure[2])]
+        temp, self.covariance = kalman_filter(conv_cam, self.position, self.covariance, 0, 0, True)
+        self.position = [temp[0] * 100 / self.case_size_cm, temp[1] * 100 / self.case_size_cm, np.rad2deg(temp[2])]
+
         print("initial positions: ", self.position)
         self.__global_init()
 
     def __global_init(self):
-        self.goal = (15, 15)
+        self.goal = (20, 10)
         self.path = display_occupancy(self.final_occupancy_grid, (int(self.position[0]), int(self.position[1])),
                                       self.goal)
         self.__global_handler()
@@ -79,24 +84,34 @@ class EventHandler:
         # print("inside __global_handler")
         print("path_x: ", self.path[0])
         print("path_y: ", self.path[1])
-        delta_r, delta_theta = update_path(self.path, self.position[0], self.position[1], self.position[2])
+        delta_r, delta_theta = update_path(self.path, int(self.position[0]), int(self.position[1]), self.position[2])
 
         # Apply rotation
-        rotate(self.thymio, delta_theta, verbose=True)
-
-        # apply displacement
-
-        l_speed, r_speed, distance_time = advance_time(delta_r)
-        print("l_speed_ratio, r_speed_ratio, distance_time: ", l_speed, r_speed, distance_time)
         self.kalman_time = time.time()
-        move(self.thymio, l_speed, r_speed, verbose=True)
+        self.right_dir = int(np.sign(delta_theta))
+        self.left_dir = -int(np.sign(delta_theta))
+        thread = rotate_thread(self.thymio, delta_theta, verbose=True)
         self.running[EventEnum.RECORD.value] = True
         threading.Thread(target=self.__record_handler).start()
 
+        while thread.is_alive():
+            # print("still not rotated at next point!")
+            self.__kalman_handler(False)
+            time.sleep(self.interval_sleep)  # TODO check interval here
+
+        # apply displacement
+        print("done rotating")
+        print("Forward of: ", delta_r)
+        l_speed_ratio, r_speed_ratio, distance_time = advance_time(delta_r)
+        self.kalman_time = time.time()
+        self.right_dir = int(np.sign(delta_r))
+        self.left_dir = int(np.sign(delta_r))
+        move(self.thymio, l_speed_ratio, r_speed_ratio, verbose=True)
+
         # check if at the next point
-        while abs(self.position[0] - self.path[0][0]) >= self.goal_threshold or abs(
-                self.position[1] - self.path[1][0]) >= self.goal_threshold:
-            print("still not at next point!")
+        thread = advance_thread(self.thymio, delta_r, verbose=True)
+        while thread.is_alive():
+            # print("still not moves at next point!")
             self.__kalman_handler(False)
             # check if local avoidance needed
             sensor_values = self.sensor_handler.sensor_raw()
@@ -109,6 +124,7 @@ class EventHandler:
             time.sleep(self.interval_check)
 
         print("reaching next point!")
+        stop(self.thymio)
         self.running[EventEnum.RECORD.value] = False
         # self.record_right = filter(lambda number: number < 30, self.record_right)  # removes the speeds below 30
         # self.record_left = filter(lambda number: number < 30, self.record_left)
@@ -116,8 +132,10 @@ class EventHandler:
         self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
 
         if len(self.path[0]):
-            time.sleep(self.interval_sleep)
             self.__global_handler()
+        else:
+            stop(self.thymio)
+            self.running[EventEnum.RECORD.value] = False
 
     def __local_handler(self):
         """
@@ -135,26 +153,31 @@ class EventHandler:
         # print("inside __kalman_handler")
         now = time.time()
         ts = now - self.kalman_time
-        print("kalman ts", ts)
-        speed_left = np.mean(self.record_left)
-        speed_right = np.mean(self.record_right)
+        self.kalman_time = now
+        # print("kalman ts", ts)
+        speed_left = np.mean(self.record_left) * self.left_dir
+        speed_right = np.mean(self.record_right) * self.right_dir
         # print("right records: ", self.record_right)
         # print("left records: ", self.record_left)
-        print("left average: ", speed_left)
-        print("right average: ", speed_right)
+        # print("left average: ", speed_left)
+        # print("right average: ", speed_right)
         self.__record_reset()
-        # TODO check self.thymio_speed_to_mms
-        self.delta_sl = speed_left * ts / self.thymio_speed_to_mms / 100000
-        self.delta_sr = speed_right * ts / self.thymio_speed_to_mms / 100000
-        print("self.delta_sl: ", self.delta_sl)
-        print("self.delta_sr: ", self.delta_sr)
+        self.delta_sl = speed_left * ts * self.thymio_speed_to_mm_s / 1000  # [m]
+        self.delta_sr = speed_right * ts * self.thymio_speed_to_mm_s / 1000  # [m]
+        # print("self.delta_sl [m]: ", self.delta_sl)
+        # print("self.delta_sr [m]: ", self.delta_sr)
 
         if measurement:
             self.__camera_handler()
 
-        self.position, self.covariance = kalman_filter(self.camera_measure, self.position,
-                                                       self.covariance,
-                                                       self.delta_sr, self.delta_sl, measurement)
+        conv_pos = [self.position[0] * self.case_size_cm / 100, self.position[1] * self.case_size_cm / 100,
+                    np.deg2rad(self.position[2])]
+        conv_cam = [self.camera_measure[0] * self.case_size_cm / 100, self.camera_measure[1] * self.case_size_cm / 100,
+                    np.deg2rad(self.camera_measure[2])]
+        temp, self.covariance = kalman_filter(conv_cam, conv_pos, self.covariance, self.delta_sr,
+                                              self.delta_sl, measurement)
+        angle = (np.rad2deg(temp[2]) + 180.0) % 360.0 - 180.0
+        self.position = [temp[0] * 100 / self.case_size_cm, temp[1] * 100 / self.case_size_cm, angle]
         print("kalman position ", self.position)
 
     def __camera_handler(self):

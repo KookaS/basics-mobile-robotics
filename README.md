@@ -124,11 +124,13 @@ Create a .env and make sure not to commit and push it
 
 This is a way to store locally variables that can be used in the project, variables that may be different for everyone
 
-    COM_PORT="\\.\COM9"     "/dev/ttyACM0"
+    COM_PORT=\\.\COM9           on linus: /dev/ttyACM0
     LEFT_WHEEL_SCALING=99
     RIGHT_WHEEL_SCALING=100
     HALF_TURN_TIME=4.72
     DISTANCE_TIME=0.32
+    CAMERA_PORT=1
+    SPEED_TO_MMS=0.0375
     
 ## documentation
 

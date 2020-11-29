@@ -97,6 +97,7 @@ def plot_covariance_ellipse(state_est, cov_est):
 def kalman_filter(z, state_est_prev, cov_est_prev, delta_sr, delta_sl, measurement):
     """
     Estimates the current state using input sensor data and the previous state
+    Everything is in meter and seconds here!
 
     param z: array representing the measurement (x,y,theta) (coming from the vision sensor)
     param delta_sr: travelled distance for the right wheel (in meters)

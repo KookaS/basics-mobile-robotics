@@ -1,7 +1,14 @@
-from src.displacement.movement import advance, rotate, stop
+import threading
+import time
+
+from src.displacement.movement import advance, rotate, stop, move
+from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
 from threading import Timer
+
+import matplotlib.pyplot as plt
+from scipy.signal import find_peaks
 
 load_dotenv()
 
@@ -14,7 +21,6 @@ class MotionTuning:
     Example:
     InitTuning(thymio=th, distance=15.0, angle=180.0)
     """
-
     def __init__(self, thymio: Thymio, interval_check=0.1, interval_sleep=0.1, distance=15.0, angle=180.0):
         self.thymio = thymio
         self.interval_check = interval_check
@@ -23,29 +29,55 @@ class MotionTuning:
         self.angle = angle
         self.timer_advance = Timer(interval=interval_sleep, function=stop)
         self.timer_rotate = Timer(interval=interval_sleep, function=stop)
+        stop(self.thymio, verbose=True)
         self.__tune_handler()
 
     def __tune_handler(self):
-        # print(threading.active_count())
-        if not self.timer_rotate.is_alive() and not self.timer_advance.is_alive():
-            stop(self.thymio, verbose=True)
-            self.timer_advance = advance(thymio=self.thymio, distance=self.distance, verbose=True,
-                                         function=self.__rot_handler, args=[self.thymio])
-        else:
-            Timer(interval=self.interval_sleep, function=self.__tune_handler).start()
-
-    def __rot_handler(self, thymio: Thymio):
-        stop(self.thymio, verbose=True)
-        self.timer_rotate = rotate(thymio=thymio, angle=self.angle, verbose=True)
-        Timer(interval=self.interval_sleep, function=self.__tune_handler).start()
+        advance(thymio=self.thymio, distance=self.distance, verbose=True)
+        rotate(thymio=self.thymio, angle=self.angle, verbose=True)
+        self.__tune_handler()
 
 
 class VelocityTuning:
     """
     """
 
-    def __init__(self, thymio: Thymio):
+    def __init__(self, thymio: Thymio, interval_sleep=0.1):
         self.thymio = thymio
+        self.sensor_handler = SensorHandler(self.thymio)
+        self.interval_sleep = interval_sleep
+        self.time = time.time()
+        self.left = []
+        self.right = []
+        self.__forward()
+
+    def __record(self):
+        sensor = self.sensor_handler.all_raw()
+        print(sensor)
+        self.left.append(sensor['ground'][0])
+        self.right.append(sensor['ground'][1])
+
+    def __forward(self):
+        move(self.thymio, l_speed_ratio=0.8, r_speed_ratio=0.8, verbose=True)
+
+        while time.time() - self.time < 20:
+            threading.Thread(target=self.__record).start()
+            time.sleep(0.1)
+
+        stop(self.thymio)
+        self.__plot()
+
+    def __plot(self):
+        plt.plot(self.left, label="left sensor")
+        plt.plot(self.right, label="right sensor")
+        # plt.plot(l_peaks, [l_sensor[idx] for idx in l_peaks], "o", label="left sensor peaks")
+        plt.xlabel("Time step 0.1[s]")
+        plt.ylabel("Ground sensor measurement")
+        plt.legend()
+        plt.show()
+        print("now find the time for, knowing that one interval is 50mm")
+        print("time interval divide / 50[mm] / 80[speed]")
+        print("nb_pikes*50/0.1/time for nb_of_spikes")
 
 
 class SensorTuning:
