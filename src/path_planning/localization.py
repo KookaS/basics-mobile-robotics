@@ -44,7 +44,7 @@ def test_saw_black(thymio: Thymio, white_threshold: int, verbose: bool = True):
 
 class Localization:
 
-    def __init__(self):
+    def __init__(self, lower_blue, upper_blue):
         # init value for value setting
         self.color_threshold = 150
         self.zero_init = 0
@@ -52,6 +52,8 @@ class Localization:
         self.Border = 0
         self.goal, self.thymio = (0, 1)
         self.x, self.y = (0, 1)
+        self.lower_blue = lower_blue
+        self.upper_blue = upper_blue
 
         # constants
         self.LOCALIZATION = 0
@@ -104,31 +106,32 @@ class Localization:
         return world
 
     def detect_object(self, world):
-        lower_blue = np.array([110, 50, 50])
-        upper_blue = np.array([132, 255, 255])
 
         # create the map with only the obstucale to non-zero
         world4hsv = world[:, :, ::-1]
         world_hsv = cv2.cvtColor(world4hsv, cv2.COLOR_BGR2HSV)
-        mask_red = cv2.inRange(world_hsv, lower_blue, upper_blue)
+        mask_red = cv2.inRange(world_hsv, self.lower_blue, self.upper_blue)
         occupancy_grid = np.array(mask_red)
         world_rows, world_cols, _ = world.shape
         obstacle_grid = [[[self.zero_init, self.zero_init, self.zero_init] for r in range(world_cols)] for c in
                          range(world_rows)]
-        thymio_x, thymio_y = (self.zero_init, self.zero_init)
+
+        world_hsv = cv2.cvtColor(world, cv2.COLOR_BGR2HSV)
+        mask_goal = cv2.inRange(world_hsv, self.lower_blue, self.upper_blue)
+        goal_x, goal_y = (15, 15)
 
         # look for the obstacle and increase there size
         object_grid = [[0, 0]]
         for i in range(world_rows):
             for j in range(world_cols):
                 occupancy_grid[i][j] = int(occupancy_grid[i][j] / 255)
-                if (world[i][j][self.b] > self.color_threshold) and (world[i][j][self.g] < self.color_threshold):
+                if mask_goal[i][j] > 200:
                     goal_x, goal_y = (i, j)
-                    object_grid = [[goal_x, goal_y]]
+        object_grid = [[goal_x, goal_y]]
         return object_grid, occupancy_grid
 
     def vision(self, image):
-        final_grid = detect_and_rotate(image)
+        final_grid = detect_and_rotate(image, self.lower_blue, self.upper_blue)
         vis_map = self.resize(final_grid, self.alpha, self.beta)
         world = self.rotate(vis_map)
         object_grid, occupancy_grid = self.detect_object(world)

@@ -15,16 +15,14 @@ low_yellow = np.array([12, 55, 222])
 up_yellow = np.array([31, 98, 255])
 low_red = np.array([178, 179, 0])
 up_red = np.array([[255, 255, 255]])
-low_blue = np.array([98, 134, 106])
-up_blue = np.array([109, 225, 174])
-LENGTH = 32
-WIDTH = 29
+LENGTH = 80
+WIDTH = 72.5
 
 
-def record_project():
+def record_project(low_blue, up_blue):
     # grid size
-    gW = (LENGTH + 2)
-    gH = (WIDTH + 2)
+    gW = (LENGTH + 5)
+    gH = (WIDTH + 5)
 
     filename = int(os.getenv("CAMERA_PORT"))
 
@@ -32,7 +30,7 @@ def record_project():
     fW, fH, frame = video_handle(filename)
 
     # detect the blue square and resize the frame
-    image = detect_and_rotate(frame)
+    image = detect_and_rotate(frame, low_blue, up_blue)
     fW, fH, _ = image.shape
 
     # detect both yellow and green square for further angle and center computation
@@ -70,7 +68,7 @@ def record_project():
     # plt.show()
     # print('X', x2, 'Y', y2)
     # print('Angle', angle)
-    return [x2, y2, angle]
+    return [x2 - 2.5, y2 - 2.5, angle]
 
 
 def frame_analysis_green(fW, fH, frame, gW, gH):
@@ -113,8 +111,8 @@ def frame_analysis_green(fW, fH, frame, gW, gH):
         yf = y + int(h / 2)
         # cv2.circle(frame,(xf,yf),4,(255,255,0),-1)
 
-        x2 = int(xf * cam_grid_ratio[0])
-        y2 = gH - int(yf * cam_grid_ratio[1])
+        x2 = xf * cam_grid_ratio[0]
+        y2 = gH - yf * cam_grid_ratio[1]
 
         frame = frame[:, :, ::-1]
 
@@ -167,8 +165,8 @@ def frame_analysis_yellow(fW, fH, frame, gW, gH):
         yf = y + int(h / 2)
         cv2.circle(frame, (xf, yf), 4, (255, 255, 0), -1)
 
-        x2 = int(xf * cam_grid_ratio[0])
-        y2 = gH - int(yf * cam_grid_ratio[1])
+        x2 = xf * cam_grid_ratio[0]
+        y2 = gH - yf * cam_grid_ratio[1]
 
         frame = frame[:, :, ::-1]
 
@@ -206,7 +204,7 @@ def give_thymio_angle(image, xcy, ycy, xcg, ycg):
 
 
 # detect the blue square and resize the frame
-def detect_and_rotate(image):
+def detect_and_rotate(image, low_blue, up_blue):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # hsv value for the various mask
@@ -370,7 +368,7 @@ def detect_ball(frame):
         return [X, Y]
 
 
-def test_camera():
+def test_camera(low_blue, up_blue):
     # i = 0 pour main webcam aka built in, 1 for first usb port etc
     # cap = cv2.VideoCapture(i)
 
@@ -382,8 +380,8 @@ def test_camera():
     fW = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     fH = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     # Que QR code, a rajouter cadre + depassement
-    gW = (LENGTH + 2)
-    gH = (WIDTH + 2)
+    gW = (LENGTH + 5)
+    gH = (WIDTH + 5)
     cam_grid_ratio = (gW / fW, gH / fH)
 
     while (1):
