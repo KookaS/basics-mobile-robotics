@@ -11,39 +11,12 @@ load_dotenv()
 
 low_green = np.array([43, 32, 164])
 up_green = np.array([75, 255, 255])
-low_yellow = np.array([7, 37, 255])
-up_yellow = np.array([31, 139, 255])
+low_yellow = np.array([12, 55, 222])
+up_yellow = np.array([31, 98, 255])
 low_red = np.array([178, 179, 0])
 up_red = np.array([[255, 255, 255]])
 LENGTH = 80
 WIDTH = 72.5
-
-"""
-"""
-
-"""
-# working
-low_green = np.array([40, 60, 60])
-up_green = np.array([80, 255, 255])
-low_yellow = np.array([20, 60, 60])
-up_yellow = np.array([70, 255, 255])
-"""
-
-"""
-# new
-low_green = np.array([40, 50, 50])
-up_green = np.array([60, 255, 255])
-low_yellow = np.array([20, 60, 60])
-up_yellow = np.array([70, 255, 255])
-"""
-
-"""
-# original
-low_green = np.array([36, 25, 25])
-up_green = np.array([102, 255, 255])
-low_yellow = np.array([20, 100, 100])
-up_yellow = np.array([30, 255, 255])
-"""
 
 
 def record_project(low_blue, up_blue):
