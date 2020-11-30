@@ -290,6 +290,9 @@ def full_path_to_points(path):
 
 def display_occupancy(final_occupancy_grid, position, goal):
     # Run the A* algorithm
+    position[0] = int(position[0]/2.5)
+    position[1] = int(position[1]/2.5)
+
     path = A_Star(position, goal, final_occupancy_grid)  # all steps in path
     path = np.array(path).reshape(-1, 2).transpose()
     new_path = full_path_to_points(path)  # concatenated path

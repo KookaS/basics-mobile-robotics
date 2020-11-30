@@ -75,8 +75,8 @@ class EventHandler:
         self.__global_init()
 
     def __global_init(self):
-        self.goal = (20, 10)
-        self.path = display_occupancy(self.final_occupancy_grid, (int(self.position[0]), int(self.position[1])),
+        self.goal = (20, 10)  # TO REMOVE
+        self.path = display_occupancy(self.final_occupancy_grid, (self.position[0], self.position[1]),
                                       self.goal)
         self.__global_handler()
 
