@@ -2,7 +2,7 @@ import os
 import sys
 import pprint
 import time
-
+import numpy as np
 from src.displacement.management import EventHandler
 from src.sensors.tuning import MotionTuning, VelocityTuning
 from src.thymio.Thymio import Thymio
@@ -13,7 +13,8 @@ from src.vision.camera import test_camera, record_project, camera_tweak
 
 sys.path.insert(0, os.path.join(os.getcwd(), 'src'))
 load_dotenv()
-
+LOW_BLUE = np.array([98, 134, 106])  # à changer dans management
+UP_BLUE = np.array([109, 225, 174])  # à changer dans management
 
 def print_thymio(thymio: Thymio):
     """
@@ -31,7 +32,7 @@ def print_thymio(thymio: Thymio):
 
 def main():
     # test_camera() # Position not accurate!!!
-    # camera_tweak()
+    # camera_tweak(LOW_BLUE, UP_BLUE)
     # time.sleep(30)
 
     """

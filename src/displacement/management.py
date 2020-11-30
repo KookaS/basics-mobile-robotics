@@ -30,7 +30,7 @@ class EventHandler:
     """
 
     def __init__(self, thymio: Thymio, interval_check=0.1, interval_sleep=0.05, obstacle_threshold=2000,
-                 stop_threshold=3500, goal_threshold=2):
+                 stop_threshold=3500, goal_threshold=2, low_blue=np.array([98, 134, 106]), up_blue=np.array([109, 225, 174])):
         self.goal_threshold = goal_threshold  # nb of cubes around the goal
         self.thymio: Thymio = thymio
         self.interval_check = interval_check
@@ -49,6 +49,8 @@ class EventHandler:
         self.record_left = [0]
         self.record_right = [0]
         self.goal = (15, 15)
+        self.low_blue = low_blue
+        self.up_blue = up_blue
         for _ in EventEnum:
             self.running.append(False)
         self.__check_thread_init()
@@ -58,7 +60,7 @@ class EventHandler:
         Initialize the thread for checking scenarios, then pause it until next call.
         """
         # TODO add goal detection
-        self.localize = Localization()
+        self.localize = Localization(self.low_blue, self.up_blue)
         self.final_occupancy_grid, self.goal = self.localize.localize()
         self.__camera_handler()
         self.position = [0, 0, 0]
