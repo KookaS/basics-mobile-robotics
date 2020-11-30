@@ -31,7 +31,7 @@ def print_thymio(thymio: Thymio):
 
 
 def main():
-    # test_camera() # Position not accurate!!!
+    # test_camera() # Position not accurate!!!Wrong code
     # camera_tweak(LOW_BLUE, UP_BLUE)
     # time.sleep(30)
 

@@ -131,7 +131,7 @@ class Localization:
         return object_grid, occupancy_grid
 
     def vision(self, image):
-        final_grid = detect_and_rotate(image)
+        final_grid = detect_and_rotate(image, self.lower_blue, self.upper_blue)
         vis_map = self.resize(final_grid, self.alpha, self.beta)
         world = self.rotate(vis_map)
         object_grid, occupancy_grid = self.detect_object(world)
