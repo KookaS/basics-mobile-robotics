@@ -5,9 +5,9 @@ import time
 import numpy as np
 from enum import Enum
 
-from src.displacement.movement import stop, rotate, advance_time, move, rotate_time, rotate_thread, advance_thread
+from src.displacement.movement import stop, rotate_thread, advance_thread
 from src.displacement.planning import update_path
-from src.kalman.kalmann_filter import kalman_filter
+from src.kalman.kalmann_filter import Kalman
 from src.local_avoidance.obstacle import ObstacleAvoidance
 from src.path_planning.localization import Localization
 from src.path_planning.occupancy import display_occupancy
@@ -30,7 +30,8 @@ class EventHandler:
     """
 
     def __init__(self, thymio: Thymio, interval_check=0.1, interval_sleep=0.05, obstacle_threshold=2000,
-                 stop_threshold=3500, goal_threshold=2, low_blue=np.array([98, 134, 106]), up_blue=np.array([109, 225, 174])):
+                 stop_threshold=3500, goal_threshold=2, low_blue=np.array([98, 134, 106]),
+                 up_blue=np.array([109, 225, 174])):
         self.goal_threshold = goal_threshold  # nb of cubes around the goal
         self.thymio: Thymio = thymio
         self.interval_check = interval_check
@@ -39,7 +40,6 @@ class EventHandler:
         self.stop_threshold = stop_threshold
         self.case_size_cm = 2.5
         self.sensor_handler = SensorHandler(self.thymio)
-        self.covariance = 1 * np.ones([3, 3])
         self.thymio_speed_to_mm_s = float(os.getenv("SPEED_80_TO_MM_S"))
         self.kalman_time = time.time()
         self.ts = 0
@@ -64,11 +64,12 @@ class EventHandler:
         self.final_occupancy_grid, self.goal = self.localize.localize()
         self.__camera_handler()
         self.position = [0, 0, 0]
-        conv_cam = [self.camera_measure[0] * self.case_size_cm / 100, self.camera_measure[1] * self.case_size_cm / 100,
-                    np.deg2rad(self.camera_measure[2])]
-        temp, self.covariance = kalman_filter(conv_cam, self.position, self.covariance, 0, 0, True)
-        self.position = [temp[0] * 100 / self.case_size_cm, temp[1] * 100 / self.case_size_cm, np.rad2deg(temp[2])]
-
+        self.covariance = 1 * np.ones([3, 3])
+        self.kalman = Kalman(qx=0.2, qy=0.2, qt=0.4, k_delta_sl=0.8, k_delta_sr=0.8)
+        conv_cam = [self.camera_measure[0], self.camera_measure[1], np.deg2rad(self.camera_measure[2])]
+        temp, self.covariance = self.kalman.kalman_filter(conv_cam, self.position, self.covariance, 0, 0, True)
+        self.position = [temp[0], temp[1], np.rad2deg(temp[2])]
+        self.kalman.tune_values(qx=8, qy=8, qt=8, k_delta_sl=0.1, k_delta_sr=0.1)
         print("initial positions: ", self.position)
         self.__global_init()
 
@@ -86,7 +87,8 @@ class EventHandler:
         # print("inside __global_handler")
         print("path_x: ", self.path[0])
         print("path_y: ", self.path[1])
-        delta_r, delta_theta = update_path(self.path, int(self.position[0]), int(self.position[1]), self.position[2])
+        delta_r, delta_theta = update_path(self.path, self.position[0], self.position[1], self.position[2],
+                                           self.case_size_cm)
 
         # Apply rotation
         self.kalman_time = time.time()
@@ -127,6 +129,7 @@ class EventHandler:
         # self.record_left = filter(lambda number: number < 30, self.record_left)
         self.__kalman_handler(True)
         self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
+        print("position ", self.position)
 
         if len(self.path[0]):
             self.__global_handler()
@@ -167,19 +170,17 @@ class EventHandler:
         if measurement:
             self.__camera_handler()
 
-        conv_pos = [self.position[0] * self.case_size_cm / 100, self.position[1] * self.case_size_cm / 100,
-                    np.deg2rad(self.position[2])]
-        conv_cam = [self.camera_measure[0] * self.case_size_cm / 100, self.camera_measure[1] * self.case_size_cm / 100,
-                    np.deg2rad(self.camera_measure[2])]
-        temp, self.covariance = kalman_filter(conv_cam, conv_pos, self.covariance, self.delta_sr,
-                                              self.delta_sl, measurement)
+        conv_pos = [self.position[0], self.position[1], np.deg2rad(self.position[2])]
+        conv_cam = [self.camera_measure[0], self.camera_measure[1], np.deg2rad(self.camera_measure[2])]
+        temp, self.covariance = self.kalman.kalman_filter(conv_cam, conv_pos, self.covariance, self.delta_sr,
+                                                          self.delta_sl, measurement)
         angle = (np.rad2deg(temp[2]) + 180.0) % 360.0 - 180.0
-        self.position = [temp[0] * 100 / self.case_size_cm, temp[1] * 100 / self.case_size_cm, angle]
+        self.position = [temp[0], temp[1], angle]
         print("kalman position ", self.position)
 
     def __camera_handler(self):
         # print("inside __camera_handler")
-        self.camera_measure = record_project()
+        self.camera_measure = record_project(self.low_blue, self.up_blue)
         print("camera position ", self.camera_measure)
 
     def __record_handler(self):
