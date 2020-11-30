@@ -65,6 +65,7 @@ class EventHandler:
         self.kalman = Kalman(qx=0.05, qy=0.05, qt=0.1, k_delta_sl=0.1, k_delta_sr=0.1)
         conv_cam = [self.camera_measure[0] * self.case_size_cm / 100, self.camera_measure[1] * self.case_size_cm / 100,
                     np.deg2rad(self.camera_measure[2])]
+
         temp, self.covariance = self.kalman.kalman_filter(conv_cam, self.position, self.covariance, 0, 0, True)
         self.position = [temp[0] * 100 / self.case_size_cm, temp[1] * 100 / self.case_size_cm, np.rad2deg(temp[2])]
         self.kalman.tune_values(qx=8, qy=8, qt=8, k_delta_sl=0.1, k_delta_sr=0.1)
