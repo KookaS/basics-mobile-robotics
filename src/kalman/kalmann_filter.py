@@ -5,6 +5,7 @@ import time
 import numpy as np
 import math
 
+from src.displacement.movement import stop
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from src.vision.camera import Camera
@@ -148,16 +149,19 @@ class Kalman:
             # Update step
             # innovation / measurement residual
             i = z - state_est_a_priori
-            print("i", i)
 
             # Kalman gain (tells how much the predictions should be corrected based on the measurements)
             K = np.dot(cov_est_a_priori, np.linalg.inv(cov_est_a_priori + self.Q))
-            print(K)
+
             # a posteriori estimate
             state_est = state_est_a_priori + np.dot(K, i)
             cov_est = cov_est_a_priori - np.dot(K, cov_est_a_priori)
+            """
+            print("i", i)
+            print(K)
             print("state_est", state_est)
             print("cov_est", cov_est)
+            """
 
         else:  # odometry
             state_est = state_est_a_priori
@@ -180,21 +184,20 @@ class KalmanHandler:
         self.camera = Camera()
         self.covariance = 1 * np.ones([3, 3])
         self.kalman_position = [0, 0, 0]
-        self.camera_position = [0, 0, 0]
+        self.camera_position = [-1, -1, 0]
 
     def __record_handler(self):
         speed = self.sensor_handler.speed()
-        right = speed['right_speed']
-        if right > 110:
-            right = 100
-        left = speed['left_speed']
-        if left > 110:
-            left = 100
-        self.record_right.append(right)
-        self.record_left.append(left)
+        r_speed = speed['right_speed']
+        l_speed = speed['left_speed']
+        l_speed = l_speed if l_speed <= 2 ** 15 else l_speed - 2 ** 16
+        r_speed = r_speed if r_speed <= 2 ** 15 else r_speed - 2 ** 16
+        self.record_left.append(l_speed)
+        self.record_right.append(r_speed)
+        # print("l_speed, r_speed", l_speed, r_speed)
 
         if self.recording:
-            time.sleep(self.interval_sleep / 10)
+            time.sleep(self.interval_sleep / 5)
             self.__record_handler()
         else:
             self.__record_reset()
@@ -210,28 +213,38 @@ class KalmanHandler:
     def start_recording(self):
         self.kalman_time = time.time()
         self.recording = True
+        print("START RECORDING")
         threading.Thread(target=self.__record_handler).start()
         time.sleep(self.interval_sleep)
 
     def stop_recording(self):
+        print("STOP RECORDING")
         self.recording = False
 
-    def get_kalman(self, left_dir, right_dir, measurement: bool):
+    def get_kalman(self, measurement: bool):
         now = time.time()
         ts = now - self.kalman_time
         self.kalman_time = now
-        speed_left = np.mean(self.record_left) * left_dir
-        speed_right = np.mean(self.record_right) * right_dir
+
+        if not len(self.record_left) and not len(self.record_right):
+            print("NO VALUES RECORDED! length of speed array: ", len(self.record_left), len(self.record_right))
+            return self.kalman_position
+
+        speed_left = sum(self.record_left) / len(self.record_left)
+        speed_right = sum(self.record_right) / len(self.record_right)
         print("ts ", ts)
         print("speed_left", speed_left)
         print("speed_right", speed_right)
-        self.__record_reset()
         delta_sl = speed_left * ts * self.thymio_speed_to_mm_s / 1000  # [m]
         delta_sr = speed_right * ts * self.thymio_speed_to_mm_s / 1000  # [m]
 
         if measurement:
+            stop(self.thymio)
+            temp = time.time()
             self.__camera_handler()
+            print("time for camera", time.time() - temp)
 
+        self.__record_reset()
         conv_pos = [self.kalman_position[0], self.kalman_position[1], np.deg2rad(self.kalman_position[2])]
         conv_cam = [self.camera_position[0], self.camera_position[1], np.deg2rad(self.camera_position[2])]
         temp, self.covariance = self.kalman.kalman_filter(conv_cam, conv_pos, self.covariance, delta_sr,
@@ -242,7 +255,9 @@ class KalmanHandler:
 
     def __camera_handler(self):
         self.camera_position = self.camera.record_project()
+        print("camera position", self.camera_position)
 
     def get_camera(self):
         self.__camera_handler()
+        self.kalman_position = self.camera_position
         return self.camera_position

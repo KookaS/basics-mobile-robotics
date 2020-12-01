@@ -9,7 +9,7 @@ from threading import Timer
 load_dotenv()
 
 
-def move(thymio: Thymio, l_speed_ratio=1, r_speed_ratio=1, verbose: bool = False):
+def move(thymio: Thymio, l_speed_ratio=0.5, r_speed_ratio=0.5, verbose: bool = False):
     """
     Move the robot's wheels correctly. Manages the negative speed well.
     Once this function is called the robot will continue forever if no further implementation is used.
@@ -22,15 +22,16 @@ def move(thymio: Thymio, l_speed_ratio=1, r_speed_ratio=1, verbose: bool = False
     """
     # Changing negative values to the expected ones with the bitwise complement
     l_speed = int(l_speed_ratio * int(os.getenv("LEFT_WHEEL_SCALING")))
-    l_speed = l_speed if l_speed >= 0 else 2 ** 16 + l_speed
     r_speed = int(r_speed_ratio * int(os.getenv("RIGHT_WHEEL_SCALING")))
-    r_speed = r_speed if r_speed >= 0 else 2 ** 16 + r_speed
-    thymio.set_var("motor.left.target", l_speed)
-    thymio.set_var("motor.right.target", r_speed)
 
     # Printing the speeds if requested
     if verbose:
         print("\t\t Setting speed : ", l_speed, r_speed)
+
+    l_speed = l_speed if l_speed >= 0 else 2 ** 16 + l_speed
+    r_speed = r_speed if r_speed >= 0 else 2 ** 16 + r_speed
+    thymio.set_var("motor.left.target", l_speed)
+    thymio.set_var("motor.right.target", r_speed)
 
 
 def stop(thymio: Thymio, verbose=False):
@@ -72,7 +73,7 @@ def rotate(thymio: Thymio, angle: float, verbose: bool = False):
 def rotate_time(angle: float):
     l_speed = -int(np.sign(angle))
     r_speed = int(np.sign(angle))
-    turn_time = float(os.getenv("HALF_TURN_TIME")) * abs(angle) / 180.0
+    turn_time = float(os.getenv("HALF_TURN_TIME")) * abs(angle) / 180.0  # speed of 100
     return l_speed, r_speed, turn_time
 
 
