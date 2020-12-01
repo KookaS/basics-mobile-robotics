@@ -4,6 +4,8 @@ import time
 from enum import Enum
 
 import numpy as np
+
+from src.kalman.kalmann_filter import Kalman
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from src.displacement.movement import stop, rotate, advance
@@ -39,6 +41,7 @@ class ObstacleAvoidance:
                  angle_avoidance=5.0, square=2.5, wall_threshold=3000, clear_thresh=2400):
         self.thymio = thymio
         self.sensor_handler = SensorHandler(thymio)
+        self.kalman = Kalman(qx=0.1, qy=0.1, qt=0.1, k_delta_sl=0.01, k_delta_sr=0.01)
         self.interval_sleep = interval_sleep
         self.distance_avoidance = distance_avoidance
         self.angle_avoidance = angle_avoidance
@@ -72,15 +75,13 @@ class ObstacleAvoidance:
             if rotated == EventEnum.LEFT:
                 rotate(self.thymio, self.angle_avoidance)
                 if sensor_values[3] <= self.clear_thresh:
-
                     break
             else:
                 rotate(self.thymio, -self.angle_avoidance)
                 if sensor_values[1] <= self.clear_thresh:
                     break
 
-        self.thymio.set_var("motor.left.target", 0)
-        self.thymio.set_var("motor.right.target", 0)
+        stop(self.thymio)
 
         for i in range(3):
             self.__cote_avoid(rotated)
@@ -91,7 +92,7 @@ class ObstacleAvoidance:
         else:
             rotate(self.thymio, -self.angle_avoidance)
 
-    def __cote_avoid(self,rotated):
+    def __cote_avoid(self, rotated):
         condition = True
         while condition:
             advance(self.thymio, self.distance_avoidance)
@@ -111,7 +112,7 @@ class ObstacleAvoidance:
             elif (rotated == EventEnum.LEFT) and (sensor_values[4] < 2000):
                 print(3)
                 rotate(self.thymio, 30)
-                advance(self.thymio, 4*self.distance_avoidance)
+                advance(self.thymio, 4 * self.distance_avoidance)
                 while sensor_values[4] < 1000:
                     sensor_values = self.sensor_handler.sensor_raw()["sensor"]
                     print(7)
@@ -129,7 +130,20 @@ class ObstacleAvoidance:
                 rotate(self.thymio, -20)
                 break
 
+    def __record_handler(self):
+        speed = self.sensor_handler.speed()
+        right = speed['right_speed']
+        if right > 110:
+            right = 100
+        left = speed['left_speed']
+        if left > 110:
+            left = 100
+        self.record_right.append(right)
+        self.record_left.append(left)
 
+        if self.running[EventEnum.RECORD.value]:
+            time.sleep(self.interval_sleep / 10)
+            self.__record_handler()
 
     def __check_global_obstacles(self):
         obstacle = False
@@ -137,16 +151,14 @@ class ObstacleAvoidance:
         y = self.position[1]
         theta = self.position[2]
 
-        #if(theta):
+        # if(theta):
 
-        #elif:
-
+        # elif:
 
         if self.final_occupancy_grid[x][y] == 1:
             obstacle = True
 
         return math.sqrt((self.position[0] - x) * self.square ** 2 + (self.position[1] - y) * self.square ** 2)
-
 
     class ObstacleAvoidanceV2:
 

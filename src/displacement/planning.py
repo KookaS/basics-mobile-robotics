@@ -25,7 +25,6 @@ def update_path(path, x, y, theta, case_size):
         # print("cases en x: ", int(np.sign(delta_x)))
         # print("cases en y: ", int(np.sign(delta_y)))
         delta_r = np.sqrt(delta_x_cm ** 2 + delta_y_cm ** 2)
-        print("delta_r: ", delta_r)
         # print("x, y: ", x, y)
 
         # Relative rotation to target

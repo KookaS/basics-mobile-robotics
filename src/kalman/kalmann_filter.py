@@ -1,10 +1,18 @@
+import os
+import threading
+import time
+
 import numpy as np
 import math
+
+from src.sensors.state import SensorHandler
+from src.thymio.Thymio import Thymio
+from src.vision.camera import Camera
 
 
 class Kalman:
 
-    def __init__(self, qx, qy, qt, k_delta_sr, k_delta_sl):
+    def __init__(self, qx=0.1, qy=0.1, qt=0.1, k_delta_sr=0.1, k_delta_sl=0.1):
         self.Ts = 0.1
         self.state_est = [np.array([[0], [0], [0]])]
         self.cov_est = [0.01 * np.ones([3, 3])]
@@ -114,41 +122,127 @@ class Kalman:
         Fx = self.jacobianF_x(theta, delta_s, delta_theta)
         Fu = self.jacobianF_u(theta, delta_s, delta_theta)
 
-        # print("z: ", z)
-        # print("state_est_prev: ", state_est_prev)
-        # print("cov_est_prev: ", cov_est_prev)
-        # print("delta_sr: ", delta_sr)
-        # print("delta_sl: ", delta_sl)
         # Prediction step
         # estimated mean of the state
         z = np.array([[z[0]], [z[1]], [z[2]]])
         state_est_prev = np.array([[state_est_prev[0]], [state_est_prev[1]], [state_est_prev[2]]])
-        # print("z: ", z)
-        # print("state_est_prev: ", state_est_prev)
 
         state_est_a_priori = state_est_prev + np.array(
             [[delta_s * np.cos(theta + delta_theta / 2)], [delta_s * np.sin(theta + delta_theta / 2)], [delta_theta]])
 
         # Estimated covariance of the state
         cov_est_a_priori = np.dot(Fx, np.dot(cov_est_prev, Fx.T)) + np.dot(Fu, np.dot(self.R, Fu.T))
+        """
+        print("z: ", z)
+        print("state_est_prev: ", state_est_prev)
+        print("cov_est_prev: ", cov_est_prev)
+        print("delta_sr: ", delta_sr)
+        print("delta_sl: ", delta_sl)
+        print("Fx", Fx)
+        print("Fu", Fu)
+        print("state_est_a_priori", state_est_a_priori)
+        print("cov_est_a_priori", cov_est_a_priori)
+        """
 
-        # If we have camera's measurements
         if measurement:  # odometry et measurements
             # Update step
             # innovation / measurement residual
             i = z - state_est_a_priori
+            print("i", i)
 
             # Kalman gain (tells how much the predictions should be corrected based on the measurements)
             K = np.dot(cov_est_a_priori, np.linalg.inv(cov_est_a_priori + self.Q))
-
+            print(K)
             # a posteriori estimate
             state_est = state_est_a_priori + np.dot(K, i)
             cov_est = cov_est_a_priori - np.dot(K, cov_est_a_priori)
+            print("state_est", state_est)
+            print("cov_est", cov_est)
 
         else:  # odometry
             state_est = state_est_a_priori
             cov_est = cov_est_a_priori
 
-        # print("cov_est: ", cov_est)
-        # print("state_est: ", state_est)
         return state_est.flatten().tolist(), cov_est
+
+
+class KalmanHandler:
+    def __init__(self, thymio: Thymio, interval_sleep=0.05):
+        self.interval_sleep = interval_sleep
+        self.thymio = thymio
+        self.kalman = Kalman()
+        self.record_left = []
+        self.record_right = []
+        self.sensor_handler = SensorHandler(self.thymio)
+        self.recording = False
+        self.kalman_time = 0
+        self.thymio_speed_to_mm_s = float(os.getenv("SPEED_80_TO_MM_S"))
+        self.camera = Camera()
+        self.covariance = 1 * np.ones([3, 3])
+        self.kalman_position = [0, 0, 0]
+        self.camera_position = [0, 0, 0]
+
+    def __record_handler(self):
+        speed = self.sensor_handler.speed()
+        right = speed['right_speed']
+        if right > 110:
+            right = 100
+        left = speed['left_speed']
+        if left > 110:
+            left = 100
+        self.record_right.append(right)
+        self.record_left.append(left)
+
+        if self.recording:
+            time.sleep(self.interval_sleep / 10)
+            self.__record_handler()
+        else:
+            self.__record_reset()
+
+    def __record_reset(self):
+        self.record_right = []
+        self.record_left = []
+
+    def __record_filter(self, threshold):
+        self.record_right = filter(lambda number: number < threshold, self.record_right)
+        self.record_left = filter(lambda number: number < threshold, self.record_left)
+
+    def start_recording(self):
+        self.kalman_time = time.time()
+        self.recording = True
+        threading.Thread(target=self.__record_handler).start()
+        time.sleep(self.interval_sleep)
+
+    def stop_recording(self):
+        self.recording = False
+
+    def get_kalman(self, left_dir, right_dir, measurement: bool):
+        now = time.time()
+        ts = now - self.kalman_time
+        self.kalman_time = now
+        speed_left = np.mean(self.record_left) * left_dir
+        speed_right = np.mean(self.record_right) * right_dir
+        print("ts ", ts)
+        print("speed_left", speed_left)
+        print("speed_right", speed_right)
+        self.__record_reset()
+        delta_sl = speed_left * ts * self.thymio_speed_to_mm_s / 1000  # [m]
+        delta_sr = speed_right * ts * self.thymio_speed_to_mm_s / 1000  # [m]
+
+        if measurement:
+            self.__camera_handler()
+
+        conv_pos = [self.kalman_position[0], self.kalman_position[1], np.deg2rad(self.kalman_position[2])]
+        conv_cam = [self.camera_position[0], self.camera_position[1], np.deg2rad(self.camera_position[2])]
+        temp, self.covariance = self.kalman.kalman_filter(conv_cam, conv_pos, self.covariance, delta_sr,
+                                                          delta_sl, measurement)
+        self.kalman_position = [temp[0], temp[1], (np.rad2deg(temp[2]) + 180.0) % 360.0 - 180.0]
+        print("kalman position", self.kalman_position)
+        return self.kalman_position
+
+    def __camera_handler(self):
+        self.camera_position = self.camera.record_project()
+
+    def get_camera(self):
+        self.__camera_handler()
+        return self.camera_position
