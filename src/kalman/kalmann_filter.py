@@ -238,6 +238,8 @@ class KalmanHandler:
         speed = self.sensor_handler.speed()
         speed_right = speed['right_speed']
         speed_left = speed['left_speed']
+        speed_right = speed_right if speed_right <= 2 ** 15 else speed_right - 2 ** 16
+        speed_left = speed_left if speed_left <= 2 ** 15 else speed_left - 2 ** 16
 
         # print("ts ", ts)
         print("speed_left", speed_left)

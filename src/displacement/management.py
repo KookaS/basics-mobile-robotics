@@ -15,13 +15,13 @@ class EventHandler:
     """
     """
 
-    def __init__(self, thymio: Thymio, interval_camera=10, interval_odometry=0.05, obstacle_threshold=2000,
-                 stop_threshold=3500, epsilon_theta=5, epsilon_r=2.5):
+    def __init__(self, thymio: Thymio, interval_camera=10, interval_odometry=0.05, interval_sleep=0.01,
+                 obstacle_threshold=2000, epsilon_theta=5, epsilon_r=2.5):
         self.thymio: Thymio = thymio
         self.interval_camera = interval_camera
         self.interval_odometry = interval_odometry
+        self.interval_sleep = interval_sleep
         self.obstacle_threshold = obstacle_threshold
-        self.stop_threshold = stop_threshold
         self.case_size_cm = 2.5  # [cm]
         stop(self.thymio)
         self.final_occupancy_grid, self.goal = Localization().localize()
@@ -42,13 +42,10 @@ class EventHandler:
         Manages the thread for the GLOBAL scenario.
         This function is called on it's own thread every interval_odometry seconds.
         """
-        # check if camera measurement needed
-
         delta_r, delta_theta = update_path(self.path, self.kalman_position[0], self.kalman_position[1],
                                            self.kalman_position[2],
                                            self.case_size_cm)
         print("delta_r, delta_theta", delta_r, delta_theta)
-        print()
         # TODO add scaling to slow down when close to goal
         # Apply rotation
         if abs(delta_theta) > self.epsilon_theta:
@@ -92,6 +89,7 @@ class EventHandler:
             self.odometry_timer = time.time()
 
         if len(self.path[0]):
+            time.sleep(self.interval_sleep)
             self.__global_handler()
         else:
             self.kalman_handler.stop_recording()
