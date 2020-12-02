@@ -15,16 +15,15 @@ class EventHandler:
     """
     """
 
-    def __init__(self, thymio: Thymio, interval_camera=3, interval_odometry=0.05, obstacle_threshold=2000,
-                 stop_threshold=3500, goal_threshold=2, epsilon_theta=3, epsilon_r=1.25):
-        self.goal_threshold = goal_threshold  # nb of cubes around the goal
+    def __init__(self, thymio: Thymio, interval_camera=10, interval_odometry=0.05, obstacle_threshold=2000,
+                 stop_threshold=3500, epsilon_theta=5, epsilon_r=2.5):
         self.thymio: Thymio = thymio
         self.interval_camera = interval_camera
         self.interval_odometry = interval_odometry
         self.obstacle_threshold = obstacle_threshold
         self.stop_threshold = stop_threshold
-        self.case_size_cm = 2.5
-        self.goal = (15, 15)
+        self.case_size_cm = 2.5  # [cm]
+        stop(self.thymio)
         self.final_occupancy_grid, self.goal = Localization().localize()
         self.kalman_handler = KalmanHandler(thymio=self.thymio)
         self.kalman_position = self.kalman_handler.get_camera()
@@ -33,7 +32,7 @@ class EventHandler:
         print("initial positions: ", self.kalman_position)
         self.path = display_occupancy(self.final_occupancy_grid, (self.kalman_position[0], self.kalman_position[1]),
                                       self.goal)
-        self.kalman_handler.start_recording()
+        # self.kalman_handler.start_recording() TODO
         self.camera_timer = time.time()
         self.odometry_timer = time.time()
         self.__global_handler()
@@ -44,31 +43,26 @@ class EventHandler:
         This function is called on it's own thread every interval_odometry seconds.
         """
         # check if camera measurement needed
-        if time.time() - self.camera_timer >= self.interval_camera:
-            self.kalman_position = self.kalman_handler.get_kalman(True)
-            self.camera_timer = time.time()
-        elif time.time() - self.odometry_timer >= self.interval_odometry:
-            self.kalman_position = self.kalman_handler.get_kalman(False)
-            self.odometry_timer = time.time()
 
         delta_r, delta_theta = update_path(self.path, self.kalman_position[0], self.kalman_position[1],
                                            self.kalman_position[2],
                                            self.case_size_cm)
         print("delta_r, delta_theta", delta_r, delta_theta)
-        # TODO add a elif to slow down when you re near your goal
+        print()
+        # TODO add scaling to slow down when close to goal
         # Apply rotation
         if abs(delta_theta) > self.epsilon_theta:
             left_dir, right_dir, turn_time = rotate_time(delta_theta)
-            left_dir = left_dir * 0.2
-            right_dir = right_dir * 0.2
+            left_dir = left_dir * 0.5
+            right_dir = right_dir * 0.5
             move(self.thymio, left_dir, right_dir, verbose=True)
 
         # Apply displacement
         elif abs(delta_r) > self.epsilon_r:
             print("done rotating")
             left_dir, right_dir, distance_time = advance_time(delta_r)
-            left_dir = left_dir * 0.2
-            right_dir = right_dir * 0.2
+            left_dir = left_dir * 0.5
+            right_dir = right_dir * 0.5
             move(self.thymio, left_dir, right_dir, verbose=True)
 
             # check if local avoidance needed
@@ -86,9 +80,17 @@ class EventHandler:
         else:
             print("done advancing!")
             stop(self.thymio)
+            left_dir = 0
+            right_dir = 0
             self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
 
-        # print("kalman position ", self.kalman_position)
+        if time.time() - self.camera_timer >= self.interval_camera:
+            self.kalman_position = self.kalman_handler.get_kalman(True, left_dir, right_dir)
+            self.camera_timer = time.time()
+        elif time.time() - self.odometry_timer >= self.interval_odometry:
+            self.kalman_position = self.kalman_handler.get_kalman(False, left_dir, right_dir)
+            self.odometry_timer = time.time()
+
         if len(self.path[0]):
             self.__global_handler()
         else:

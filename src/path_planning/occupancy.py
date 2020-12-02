@@ -298,8 +298,8 @@ def display_occupancy(final_occupancy_grid, position, goal):
     print("goal: ", goal)
     path = A_Star(new_pos, goal, final_occupancy_grid)  # all steps in path
     path = np.array(path).reshape(-1, 2).transpose()
-    # new_path = full_path_to_points(path)  # concatenated path
-    print("path", path)
-    display_global_path(new_pos, goal, path, final_occupancy_grid.transpose())
-    new_path = np.delete(path, 0, 1)
+    new_path = full_path_to_points(path)  # concatenated path
+    display_global_path(new_pos, goal, new_path, final_occupancy_grid.transpose())
+    new_path = np.delete(new_path, 0, 1)
+    print("path", new_path)
     return new_path

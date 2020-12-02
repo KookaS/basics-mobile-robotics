@@ -13,7 +13,7 @@ from src.vision.camera import Camera
 
 class Kalman:
 
-    def __init__(self, qx=0.1, qy=0.1, qt=0.1, k_delta_sr=0.1, k_delta_sl=0.1):
+    def __init__(self, qx=0.01, qy=0.01, qt=0.02, k_delta_sr=0.01, k_delta_sl=0.01):
         self.Ts = 0.1
         self.state_est = [np.array([[0], [0], [0]])]
         self.cov_est = [0.01 * np.ones([3, 3])]
@@ -221,18 +221,25 @@ class KalmanHandler:
         print("STOP RECORDING")
         self.recording = False
 
-    def get_kalman(self, measurement: bool):
-        now = time.time()
-        ts = now - self.kalman_time
-        self.kalman_time = now
+    def get_kalman(self, measurement: bool, left_dir, right_dir):
+        ts = time.time() - self.kalman_time
 
+        """
         if not len(self.record_left) and not len(self.record_right):
             print("NO VALUES RECORDED! length of speed array: ", len(self.record_left), len(self.record_right))
             return self.kalman_position
 
         speed_left = sum(self.record_left) / len(self.record_left)
         speed_right = sum(self.record_right) / len(self.record_right)
-        print("ts ", ts)
+        
+        speed_left = left_dir*100
+        speed_right = right_dir*100
+        """
+        speed = self.sensor_handler.speed()
+        speed_right = speed['right_speed']
+        speed_left = speed['left_speed']
+
+        # print("ts ", ts)
         print("speed_left", speed_left)
         print("speed_right", speed_right)
         delta_sl = speed_left * ts * self.thymio_speed_to_mm_s / 1000  # [m]
@@ -244,7 +251,9 @@ class KalmanHandler:
             self.__camera_handler()
             print("time for camera", time.time() - temp)
 
+        self.sensor_handler = SensorHandler(self.thymio)  # TODO check over 1000 calls
         self.__record_reset()
+        self.kalman_time = time.time()
         conv_pos = [self.kalman_position[0], self.kalman_position[1], np.deg2rad(self.kalman_position[2])]
         conv_cam = [self.camera_position[0], self.camera_position[1], np.deg2rad(self.camera_position[2])]
         temp, self.covariance = self.kalman.kalman_filter(conv_cam, conv_pos, self.covariance, delta_sr,
