@@ -50,6 +50,7 @@ class ObstacleAvoidance:
         self.clear_thresh = clear_thresh
         self.ONE_STEP = 1
         self.FIVE_STEPS = 5
+        self.width_case = 2.5
         self.__update_path()
         self.__obstacle_avoidance()
 
@@ -68,7 +69,7 @@ class ObstacleAvoidance:
             rotated = EventEnum.LEFT
         else:
             rotated = EventEnum.LEFT
-
+        print("rotated:", rotated)
         condition = True
         while condition:
             sensor_values = self.sensor_handler.sensor_raw()["sensor"]
@@ -80,17 +81,19 @@ class ObstacleAvoidance:
                 self.rotate(self.thymio, -self.angle_avoidance)
                 if sensor_values[1] <= self.clear_thresh:
                     break
-
+        print("Première rotation done")
         stop(self.thymio)
         global_path = False
 
         while not global_path:
             obstacle, global_path = self.__cote_avoid(rotated)
             if obstacle and rotated == EventEnum.LEFT:
+                print("changement de sens g->d")
                 self.rotate(self.thymio, 180)
                 rotated = EventEnum.RIGHT
 
             elif obstacle and rotated == EventEnum.RIGHT:
+                print("changement de sens d->g")
                 self.rotate(self.thymio, -180)
                 rotated = EventEnum.LEFT
 
@@ -167,8 +170,8 @@ class ObstacleAvoidance:
     def __check_global_obstacles_and_global_path(self, length_advance):
         global_path = False
         obstacle = False
-        x = self.kalman_position[0]
-        y = self.kalman_position[1]
+        x = self.kalman_position[0]/self.width_case
+        y = self.kalman_position[1]/self.width_case
         theta = self.kalman_position[2]
 
         x_discrete = round(x)
@@ -229,8 +232,8 @@ class ObstacleAvoidance:
         return obstacle, global_path
 
     def __update_path(self):
-        x = self.kalman_position[0]
-        y = self.kalman_position[1]
+        x = self.kalman_position[0]/self.width_case
+        y = self.kalman_position[1]/self.width_case
         x_discrete = round(x)
         y_discrete = round(y)
 

@@ -248,11 +248,11 @@ class KalmanHandler:
         self.sensor_handler = SensorHandler(self.thymio)  # TODO check over 1000 calls
         self.__record_reset()
         self.kalman_time = time.time()
-        conv_pos = [self.kalman_position[0], self.kalman_position[1], np.deg2rad(self.kalman_position[2])]
-        conv_cam = [self.camera_position[0], self.camera_position[1], np.deg2rad(self.camera_position[2])]
+        conv_pos = [self.kalman_position[0] / 100, self.kalman_position[1] / 100, np.deg2rad(self.kalman_position[2])]
+        conv_cam = [self.camera_position[0] / 100, self.camera_position[1] / 100, np.deg2rad(self.camera_position[2])]
         temp, self.covariance = self.kalman.kalman_filter(conv_cam, conv_pos, self.covariance, delta_sr,
                                                           delta_sl, measurement)
-        self.kalman_position = [temp[0], temp[1], (np.rad2deg(temp[2]) + 180.0) % 360.0 - 180.0]
+        self.kalman_position = [temp[0] * 100, temp[1] * 100, (np.rad2deg(temp[2]) + 180.0) % 360.0 - 180.0]
         print("kalman position", self.kalman_position)
         return self.kalman_position
 
