@@ -45,6 +45,13 @@ class EventHandler:
         Manages the thread for the GLOBAL scenario.
         This function is called on it's own thread every interval_odometry seconds.
         """
+        if time.time() - self.camera_timer >= self.interval_camera:
+            self.kalman_position = self.kalman_handler.get_kalman(True)
+            self.camera_timer = time.time()
+        elif time.time() - self.odometry_timer >= self.interval_odometry:
+            self.kalman_position = self.kalman_handler.get_kalman(False)
+            self.odometry_timer = time.time()
+
         delta_r, delta_theta = update_path(self.path, self.kalman_position[0], self.kalman_position[1],
                                            self.kalman_position[2],
                                            self.case_size_cm)
@@ -69,26 +76,17 @@ class EventHandler:
             # check if local avoidance needed
             sensor_values = self.kalman_handler.sensor_handler.sensor_raw()
             if np.amax(sensor_values["sensor"]).astype(int) >= self.obstacle_threshold:
+                print("INSIDE LOCAL AVOIDANCE!")
                 stop(self.thymio)
                 self.kalman_handler.stop_recording()
                 self.__local_handler()
-                self.kalman_position = self.kalman_handler.get_camera()
                 self.kalman_handler.start_recording()
                 self.camera_timer = time.time()
                 self.odometry_timer = time.time()
         else:
             print("done advancing!")
             stop(self.thymio)
-            left_dir = 0
-            right_dir = 0
             self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
-
-        if time.time() - self.camera_timer >= self.interval_camera:
-            self.kalman_position = self.kalman_handler.get_kalman(True, left_dir, right_dir)
-            self.camera_timer = time.time()
-        elif time.time() - self.odometry_timer >= self.interval_odometry:
-            self.kalman_position = self.kalman_handler.get_kalman(False, left_dir, right_dir)
-            self.odometry_timer = time.time()
 
         if len(self.path[0]):
             time.sleep(self.interval_sleep)
@@ -107,3 +105,4 @@ class EventHandler:
         obstacle = ObstacleAvoidance(self.thymio, self.full_path, self.final_occupancy_grid, self.kalman_position)
         self.full_path = obstacle.full_path
         self.path = full_path_to_points(self.full_path)  # concatenated path
+        self.kalman_position = obstacle.kalman_position

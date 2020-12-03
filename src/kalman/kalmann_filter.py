@@ -221,7 +221,7 @@ class KalmanHandler:
         print("STOP RECORDING")
         self.recording = False
 
-    def get_kalman(self, measurement: bool, left_dir, right_dir):
+    def get_kalman(self, measurement: bool):
         ts = time.time() - self.kalman_time
 
         if not len(self.record_left) and not len(self.record_right):
@@ -230,14 +230,6 @@ class KalmanHandler:
 
         speed_left = sum(self.record_left) / len(self.record_left)
         speed_right = sum(self.record_right) / len(self.record_right)
-
-        """
-        speed = self.sensor_handler.speed()
-        speed_right = speed['right_speed']
-        speed_left = speed['left_speed']
-        speed_right = speed_right if speed_right <= 2 ** 15 else speed_right - 2 ** 16
-        speed_left = speed_left if speed_left <= 2 ** 15 else speed_left - 2 ** 16
-        """
 
         # print("ts ", ts)
         # print("self.record_left", self.record_left)
