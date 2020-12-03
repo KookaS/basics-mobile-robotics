@@ -34,12 +34,12 @@ def main():
 
     :return:
     """
-
+    # Camera().camera_tweak()
     """
     cam = Camera()
     cam.open_camera()
     while True:
-        print(cam.test_camera())
+        print(cam.record_project())
     """
 
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)

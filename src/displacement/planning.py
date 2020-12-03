@@ -16,7 +16,7 @@ def update_path(path, x, y, theta, case_size):
         delta_x_cm = target_x - x
         delta_y_cm = target_y - y
         print("target_x [cm] ", target_x)
-        print("target_x [cm] ", target_y)
+        print("target_y [cm] ", target_y)
         # print("x: ", x)
         # print("y: ", y)
         # print("delta_x: ", delta_x)

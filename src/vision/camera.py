@@ -2,6 +2,7 @@ import os
 
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,10 +11,10 @@ load_dotenv()
 class Colors:
 
     def __init__(self):
-        self.low_green = np.array([31, 35, 167])
-        self.up_green = np.array([80, 157, 255])
-        self.low_yellow = np.array([12, 55, 222])
-        self.up_yellow = np.array([31, 164, 255])
+        self.low_green = np.array([25, 35, 145])
+        self.up_green = np.array([80, 157, 200])
+        self.low_yellow = np.array([12, 55, 200])
+        self.up_yellow = np.array([27, 121, 255])
         self.low_red = np.array([163, 111, 174])
         self.up_red = np.array([[179, 193, 255]])
         self.low_blue = np.array([98, 123, 88])
@@ -55,16 +56,28 @@ class Camera:
 
         # detect the blue square and resize the frame
         image = self.detect_and_rotate(frame)
+        plt.figure()
+        plt.imshow(image)
+        plt.show()
         fW, fH, _ = image.shape
-
+        print("fw,fh", fW, fH)
+        # print("fw,fh", fW,fH)
         # detect both yellow and green square for further angle and center computation
         x2g, y2g, xfg, yfg, frameg = self.frame_analysis_green(fW, fH, image)
         x2y, y2y, xfy, yfy, framey = self.frame_analysis_yellow(fW, fH, image)
-        # print("x2g, y2g, xfg, yfg", x2g, y2g, xfg, yfg)
-        # print("x2y, y2y, xfy, yfy", x2y, y2y, xfy, yfy)
+        ratio = (self.gw / fH, self.gh / fW)
 
+        xfg = xfg * ratio[0]
+        xfy = xfy * ratio[0]
+        yfg = yfg * ratio[1]
+        yfy = yfy * ratio[1]
+
+        print("x2g, y2g, xfg, yfg", x2g, y2g, xfg, yfg)
+        print("x2y, y2y, xfy, yfy", x2y, y2y, xfy, yfy)
         # compute the center of the thymio & gives thymio angle
-
+        xc = (xfg + xfy) / 2
+        yc = (yfg + yfy) / 2
+        print("xc,yc", xc, yc)
         x2g_temp = self.LENGTH - y2g
         y2g = x2g
         x2g = x2g_temp
@@ -139,7 +152,7 @@ class Camera:
 
             frame = frame[:, :, ::-1]
 
-        return x2, y2, xf, fH - yf, frame
+        return x2, y2, xf, yf, frame
 
     def frame_analysis_yellow(self, fW, fH, frame):
         # Que QR code, a rajouter cadre + depassement
@@ -149,7 +162,9 @@ class Camera:
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, self.colors.low_yellow, self.colors.up_yellow)
         res = cv2.bitwise_and(frame, frame, mask=mask)
-
+        plt.figure()
+        plt.imshow(mask)
+        plt.show()
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
         areas = [cv2.contourArea(c) for c in contours]
         # print("length: ", len(areas))
@@ -177,7 +192,7 @@ class Camera:
 
             frame = frame[:, :, ::-1]
 
-        return x2, y2, xf, fH - yf, frame
+        return x2, y2, xf, yf, frame
 
     def give_thymio_angle(self, image, xcy, ycy, xcg, ycg):
         y1 = int(ycy)
