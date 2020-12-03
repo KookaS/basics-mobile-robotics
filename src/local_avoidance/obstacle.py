@@ -1,14 +1,10 @@
-import math
-import threading
 import time
 from enum import Enum
 
-import numpy as np
-
-from src.kalman.kalmann_filter import Kalman
+from src.kalman.kalmann_filter import KalmanHandler
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
-from src.displacement.movement import stop, rotate, advance
+from src.displacement.movement import stop, advance_time, move, rotate_time
 
 
 def test_saw_wall(thymio: Thymio, wall_threshold=3500, verbose=False) -> bool:
@@ -37,20 +33,24 @@ class EventEnum(Enum):
 
 class ObstacleAvoidance:
 
-    def __init__(self, thymio: Thymio, final_occupancy_grid=0, position=0, interval_sleep=0.05, distance_avoidance=2.5,
+    def __init__(self, thymio: Thymio, full_path, final_occupancy_grid, interval_sleep=0.05,
+                 distance_avoidance=2.5,
                  angle_avoidance=5.0, square=2.5, wall_threshold=3000, clear_thresh=2400):
         self.thymio = thymio
+        self.full_path = full_path
+        self.__update_path()
         self.sensor_handler = SensorHandler(thymio)
-        self.kalman = Kalman(qx=0.1, qy=0.1, qt=0.1, k_delta_sl=0.01, k_delta_sr=0.01)
         self.interval_sleep = interval_sleep
         self.distance_avoidance = distance_avoidance
         self.angle_avoidance = angle_avoidance
         self.final_occupancy_grid = final_occupancy_grid
-        self.position = position
+        self.kalman_handler = KalmanHandler(thymio=self.thymio)
+        self.kalman_position = self.kalman_handler.get_camera()
         self.square = square
         self.wall_threshold = wall_threshold
         self.clear_thresh = clear_thresh
-        stop(self.thymio)
+        self.ONE_STEP = 1
+        self.FIVE_STEPS = 5
         self.__obstacle_avoidance()
 
     def __obstacle_avoidance(self):
@@ -73,176 +73,233 @@ class ObstacleAvoidance:
         while condition:
             sensor_values = self.sensor_handler.sensor_raw()["sensor"]
             if rotated == EventEnum.LEFT:
-                rotate(self.thymio, self.angle_avoidance)
+                self.rotate(self.thymio, self.angle_avoidance)
                 if sensor_values[3] <= self.clear_thresh:
                     break
             else:
-                rotate(self.thymio, -self.angle_avoidance)
+                self.rotate(self.thymio, -self.angle_avoidance)
                 if sensor_values[1] <= self.clear_thresh:
                     break
 
         stop(self.thymio)
+        global_path = False
 
-        for i in range(3):
-            self.__cote_avoid(rotated)
+        while not global_path:
+            obstacle, global_path = self.__cote_avoid(rotated)
+            if obstacle and rotated == EventEnum.LEFT:
+                self.rotate(self.thymio, 180)
+                rotated = EventEnum.RIGHT
+
+            elif obstacle and rotated == EventEnum.RIGHT:
+                self.rotate(self.thymio, -180)
+                rotated = EventEnum.LEFT
 
     def __turn_avoid(self, rotated):
         if rotated == EventEnum.LEFT:
-            rotate(self.thymio, self.angle_avoidance)
+            self.rotate(self.thymio, self.angle_avoidance)
         else:
-            rotate(self.thymio, -self.angle_avoidance)
+            self.rotate(self.thymio, -self.angle_avoidance)
 
     def __cote_avoid(self, rotated):
         condition = True
+        obstacle = False
+        global_path = False
         while condition:
-            advance(self.thymio, self.distance_avoidance)
 
-            if (rotated == EventEnum.LEFT):
-                rotate(self.thymio, -30)
+            obstacle, global_path = self.__check_global_obstacles_and_global_path(
+                self.ONE_STEP * self.distance_avoidance)
+            if obstacle:
+                return obstacle, global_path
+            self.advance(self.thymio, self.ONE_STEP * self.distance_avoidance)
+            if obstacle:
+                return obstacle, global_path
+
+            if rotated == EventEnum.LEFT:
+                self.rotate(self.thymio, -30)
             else:
-                rotate(self.thymio, 30)
+                self.rotate(self.thymio, 30)
 
             sensor_values = self.sensor_handler.sensor_raw()["sensor"]
             if (rotated == EventEnum.LEFT) and (sensor_values[4] > 2000):
                 print(1)
-                rotate(self.thymio, 30)
+                self.rotate(self.thymio, 30)
             elif (rotated == EventEnum.RIGHT) and (sensor_values[0] > 2000):
                 print(2)
-                rotate(self.thymio, -30)
+                self.rotate(self.thymio, -30)
             elif (rotated == EventEnum.LEFT) and (sensor_values[4] < 2000):
                 print(3)
-                rotate(self.thymio, 30)
-                advance(self.thymio, 4 * self.distance_avoidance)
+                self.rotate(self.thymio, 30)
+
+                obstacle, global_path = self.__check_global_obstacles_and_global_path(
+                    self.FIVE_STEPS * self.distance_avoidance)
+                if obstacle:
+                    return obstacle, global_path
+                self.advance(self.thymio, self.FIVE_STEPS * self.distance_avoidance)
+                if obstacle:
+                    return obstacle, global_path
+
                 while sensor_values[4] < 1000:
                     sensor_values = self.sensor_handler.sensor_raw()["sensor"]
                     print(7)
-                    rotate(self.thymio, -5)
-                rotate(self.thymio, 20)
+                    self.rotate(self.thymio, -5)
+                self.rotate(self.thymio, 20)
                 break
             elif (rotated == EventEnum.RIGHT) and (sensor_values[0] < 2000):
                 print(4)
-                rotate(self.thymio, -30)
-                advance(self.thymio, 4 * self.distance_avoidance)
+                self.rotate(self.thymio, -30)
+
+                obstacle, global_path = self.__check_global_obstacles_and_global_path(
+                    self.FIVE_STEPS * self.distance_avoidance)
+                if obstacle:
+                    return obstacle, global_path
+                self.advance(self.thymio, self.FIVE_STEPS * self.distance_avoidance)
+                if obstacle:
+                    return obstacle, global_path
+
                 while sensor_values[0] < 1000:
                     sensor_values = self.sensor_handler.sensor_raw()["sensor"]
                     print(7)
-                    rotate(self.thymio, 5)
-                rotate(self.thymio, -20)
+                    self.rotate(self.thymio, 5)
+                self.rotate(self.thymio, -20)
                 break
+        return obstacle, global_path
 
-    def __record_handler(self):
-        speed = self.sensor_handler.speed()
-        right = speed['right_speed']
-        if right > 110:
-            right = 100
-        left = speed['left_speed']
-        if left > 110:
-            left = 100
-        self.record_right.append(right)
-        self.record_left.append(left)
-
-        if self.running[EventEnum.RECORD.value]:
-            time.sleep(self.interval_sleep / 10)
-            self.__record_handler()
-
-    def __check_global_obstacles(self):
+    def __check_global_obstacles_and_global_path(self, length_advance):
+        global_path = False
         obstacle = False
-        x = self.position[0]
-        y = self.position[1]
-        theta = self.position[2]
+        x = self.kalman_position[0]
+        y = self.kalman_position[1]
+        theta = self.kalman_position[2]
 
-        # if(theta):
+        x_discrete = round(x)
+        y_discrete = round(y)
 
-        # elif:
+        if (theta >= -22.5) and (theta < 22.5):
+            dir_x = 1
+            dir_y = 0
+        elif (theta >= 22.5) and (theta < 67.5):
+            dir_x = 1
+            dir_y = 1
+        elif (theta >= 67.5) and (theta < 112.5):
+            dir_x = 0
+            dir_y = 1
+        elif (theta >= 112.5) and (theta < 157.5):
+            dir_x = -1
+            dir_y = 1
+        elif ((theta >= 157.5) and (theta <= 180)) or ((theta >= -180) and (theta < -157.5)):
+            dir_x = -1
+            dir_y = 0
+        elif (theta >= -157.5) and (theta < -112.5):
+            dir_x = -1
+            dir_y = -1
+        elif (theta >= -112.5) and (theta < -67.5):
+            dir_x = 0
+            dir_y = -1
+        elif (theta >= -67.5) and (theta < -22.5):
+            dir_x = 1
+            dir_y = -1
+        else:
+            dir_x = 0
+            dir_y = 0
+            print(" angle is not between -180 and 180 degrees")
 
-        if self.final_occupancy_grid[x][y] == 1:
+        x_next_step = x_discrete + length_advance * dir_x
+        y_next_step = y_discrete + length_advance * dir_y
+        if self.final_occupancy_grid[x_next_step][y_next_step] == 1:
             obstacle = True
+            print("next step will reach an obstacle")
 
-        return math.sqrt((self.position[0] - x) * self.square ** 2 + (self.position[1] - y) * self.square ** 2)
+        approx_position_x = [x_next_step - 1, x_next_step, x_next_step + 1]
+        approx_position_y = [y_next_step - 1, y_next_step, y_next_step + 1]
 
-    class ObstacleAvoidanceV2:
+        for k in range(len(self.full_path[0])):
+            x_path = self.full_path[0][k]
+            y_path = self.full_path[1][k]
 
-        def __init__(self, thymio: Thymio, final_occupancy_grid, position, interval_sleep=0.05, distance_avoidance=12.0,
-                     angle_avoidance=5.0, square=2.5, wall_threshold=4000):
-            self.thymio = thymio
-            self.sensor_handler = SensorHandler(thymio)
-            self.interval_sleep = interval_sleep
-            self.distance_avoidance = distance_avoidance
-            self.angle_avoidance = angle_avoidance
-            self.final_occupancy_grid = final_occupancy_grid
-            self.position = position
-            self.square = square
-            self.wall_threshold = wall_threshold
-            stop(self.thymio)
-            self.__obstacle_avoidance()
+            for i in range(len(approx_position_x)):
+                for j in range(len(approx_position_y)):
 
-        def __obstacle_avoidance(self):
-            sensor_values = self.sensor_handler.sensor_raw()["sensor"]
-            # print(sensor_values)
-            rotated = None
-            while np.amax(sensor_values).astype(int) >= 0:  # while still detects a wall, keep turning
-                sensor_values = self.sensor_handler.sensor_raw()["sensor"]
-                if (sensor_values[1] > 0) and (sensor_values[3] > 0):  # both sides
-                    angle = self.angle_avoidance * float(
-                        np.sign(sensor_values[3] - sensor_values[1]))
-                    rotate(self.thymio, angle, verbose=True)
-                    if angle >= 0:
-                        rotated = EventEnum.LEFT
-                    else:
-                        rotated = EventEnum.RIGHT
-                elif (sensor_values[3] > 0) or (sensor_values[4] > 0):  # right side
-                    rotate(self.thymio, angle=-self.angle_avoidance, verbose=True)
-                    rotated = EventEnum.RIGHT
-                elif (sensor_values[0] > 0) or (sensor_values[1] > 0):  # left side
-                    rotate(self.thymio, angle=self.angle_avoidance, verbose=True)
-                    rotated = EventEnum.LEFT
-                elif sensor_values[2] > 0:  # center
-                    print("rotate of ", self.angle_avoidance)
-                    rotate(self.thymio, angle=self.angle_avoidance, verbose=True)
-                    rotated = EventEnum.LEFT
-                else:
+                    x_pos = approx_position_x[i]
+                    y_pos = approx_position_y[j]
+
+                    if x_pos == x_path and y_pos == y_path:
+                        global_path = True
+                        print("next step will reach global path")
+                        return obstacle, global_path
+        return obstacle, global_path
+
+    def __update_path(self):
+        x = self.kalman_position[0]
+        y = self.kalman_position[1]
+        x_discrete = round(x)
+        y_discrete = round(y)
+
+        approx_position_x = [x_discrete - 1, x_discrete, x_discrete + 1]
+        approx_position_y = [y_discrete - 1, y_discrete, y_discrete + 1]
+        exit_loop = False
+        k_pos = []
+        for k in range(len(self.full_path[0])):
+            x_path = self.full_path[0][k]
+            y_path = self.full_path[1][k]
+            exit_for = False
+            for i in range(len(approx_position_x)):
+                for j in range(len(approx_position_y)):
+                    x_pos = approx_position_x[i]
+                    y_pos = approx_position_y[j]
+                    if x_pos == x_path and y_pos == y_path:
+                        k_pos.append(k)
+                        exit_for = True
+                        exit_loop = True
+                        break
+                if exit_for:
                     break
 
-            while True:  # check global obstacles
-                if self.__check_global_obstacles() < self.distance_avoidance:
-                    # if no obstacle in the way, starts moving forward
-                    advance(self.thymio, distance=self.distance_avoidance, verbose=True)
-                else:
-                    # if obstacle in the way
-                    rotate(self.thymio, angle=180.0, verbose=True)
-                    self.__obstacle_avoidance()
-                    return
+            if (not exit_for) and exit_loop:
+                big_k = k_pos[-1] + 1
+                self.full_path[0] = self.full_path[0][big_k:]
+                self.full_path[1] = self.full_path[1][big_k:]
+                return
 
-                # after advancing, rotate of 90 degrees and verify the situation
-                angle = 90.0
-                if rotated == EventEnum.LEFT:
-                    angle *= -1
-                rotate(self.thymio, angle=angle, verbose=True)
-                sensor_values = self.sensor_handler.sensor_raw()["sensor"]
-                if sensor_values[2] == 0 and sensor_values[0] <= self.wall_threshold and sensor_values[
-                    4] <= self.wall_threshold:
-                    # if no local obstacle anymore, go forward and stop local avoidance
-                    advance(self.thymio, distance=self.distance_avoidance, verbose=True)
-                    return
-                else:
-                    # otherwise rotate back and continue
-                    rotate(self.thymio, angle=-angle, verbose=True)
+    def advance(self, thymio: Thymio, distance: float, speed_ratio: int = 1, verbose: bool = False):
+        """
+        Moves straight of a desired distance
 
-        def __check_global_obstacles(self):
-            obstacle = False
-            x = self.position[0]
-            y = self.position[1]
-            while not obstacle:
-                value = math.cos(math.radians(self.position[2]))
-                if math.fabs(value) >= 0.5:
-                    x += int(math.copysign(1.0, value))
+        :param thymio:      the class to which the robot is referred to
+        :param distance:    distance in cm by which we want to move, positive or negative
+        :param speed_ratio:       the speed factor at which the robot goes
+        :param verbose:     printing the speed in the terminal
+        :return: timer to check if it is still alive or not
+        """
+        left_dir, right_dir, distance_time = advance_time(distance, speed_ratio)
+        # Printing the speeds if requested
+        if verbose:
+            # print("\t\t Advance speed & time : ", l_speed, r_speed, distance_time)
+            print("\t\t Advance of cm: ", distance)
 
-                value = math.sin(math.radians(self.position[2]))
-                if math.fabs(value) >= 0.5:
-                    y += int(math.copysign(1.0, value))
+        move(thymio, left_dir, right_dir)
+        self.kalman_handler.start_recording()
+        time.sleep(distance_time)
+        self.kalman_position = self.kalman_handler.get_kalman(True, left_dir, right_dir)
+        self.kalman_handler.stop_recording()
 
-                if self.final_occupancy_grid[x][y] == 1:
-                    obstacle = True
+    def rotate(self, thymio: Thymio, angle: float, verbose: bool = False):
+        """
+        Rotates of the desired angle
 
-            return math.sqrt(
-                (self.position[0] - x) * self.square ** 2 + (self.position[1] - y) * self.square ** 2)
+        :param thymio:      the class to which the robot is referred to
+        :param angle:       angle in radians by which we want to rotate, positive or negative
+        :param verbose:     printing the speed in the terminal
+        :return: timer to check if it is still alive or not
+        """
+
+        left_dir, right_dir, turn_time = rotate_time(angle)
+        # Printing the speeds if requested
+        if verbose:
+            # print("\t\t Rotate speed & time : ", l_speed, r_speed, turn_time)
+            print("\t\t Rotate of degrees : ", angle)
+
+        move(thymio, left_dir, right_dir)
+        self.kalman_handler.start_recording()
+        time.sleep(turn_time)
+        self.kalman_position = self.kalman_handler.get_kalman(True, left_dir, right_dir)
+        self.kalman_handler.stop_recording()

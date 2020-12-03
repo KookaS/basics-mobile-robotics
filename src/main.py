@@ -9,6 +9,8 @@ from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
 from src.vision.camera import Camera
+from src.local_avoidance.obstacle import test_saw_wall, ObstacleAvoidance
+
 
 # Adding the src folder in the current directory as it contains the script with the Thymio class
 sys.path.insert(0, os.path.join(os.getcwd(), 'src'))
@@ -18,7 +20,6 @@ load_dotenv()
 def print_thymio(thymio: Thymio):
     """
     Print the variables of Thymio
-
     :param thymio: The file location of the spreadsheet
     """
     print('All Thymio instance attributes:')
@@ -41,17 +42,9 @@ def main():
     while True:
         print(cam.record_project())
     """
-
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
-    """
-        position = (10,10)
-        th.set_var("motor.left.target", 100)
-        th.set_var("motor.right.target", 100)
-        c=False
-        while(not c):
-            c=test_saw_wall(th)
-    """
+
     # VelocityTuning(th)
     # MotionTuning(thymio=th, distance=15, angle=180.0)
     EventHandler(th)  # check every interval_check seconds to change scenarios
