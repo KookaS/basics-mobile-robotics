@@ -1,14 +1,13 @@
 import threading
 import time
 
-from src.displacement.movement import advance, rotate, stop, move
+from src.displacement.movement import stop, move, advance, rotate
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
 from threading import Timer
 
 import matplotlib.pyplot as plt
-from scipy.signal import find_peaks
 
 load_dotenv()
 
@@ -21,7 +20,8 @@ class MotionTuning:
     Example:
     InitTuning(thymio=th, distance=15.0, angle=180.0)
     """
-    def __init__(self, thymio: Thymio, interval_check=0.1, interval_sleep=0.1, distance=15.0, angle=180.0):
+
+    def __init__(self, thymio: Thymio, interval_check=0.1, interval_sleep=0.1, distance=60.0, angle=180.0):
         self.thymio = thymio
         self.interval_check = interval_check
         self.interval_sleep = interval_sleep

@@ -83,23 +83,10 @@ def display_global_path(start, goal, path, occupancy_grid):
     ax_astar.scatter(goal[0], goal[1], marker="o", color='purple', s=200)
     # ax_astar.set_ylim(ax_astar.get_ylim()[::-1])
 
-    ax_astar.set_ylabel('y axis')
-    ax_astar.set_xlabel('x axis')
+    ax_astar.set_ylabel('x axis')
+    ax_astar.set_xlabel('y axis')
     plt.figure()
     plt.show()
-
-
-def create_grid():
-    occupancy_grid = create_occupancy_grid()
-    # display_map(occupancy_grid.transpose(), OCCUPANCY)
-
-    # localization_grid = create_localization_grid()
-    # display_map(localization_grid, LOCALIZATION)
-
-    final_occupancy_grid = increased_obstacles_map(occupancy_grid)
-    # display_map(occupancy_grid.transpose(), OCCUPANCY)
-    # display_map(final_occupancy_grid.transpose(), OCCUPANCY)
-    return final_occupancy_grid
 
 
 def path_to_command_thymio(path):
@@ -160,7 +147,7 @@ def full_path_to_points(path):
 def display_occupancy(final_occupancy_grid, position, goal):
     # Run the A* algorithm
     x = round(position[0] / 2.5)
-    y = LENGTH - round(position[1] / 2.5)
+    y = round(position[1] / 2.5)
     new_pos = (x, y)
     print("start: ", new_pos)
     print("goal: ", goal)

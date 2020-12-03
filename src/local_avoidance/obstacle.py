@@ -38,7 +38,6 @@ class ObstacleAvoidance:
                  angle_avoidance=5.0, square=2.5, wall_threshold=3000, clear_thresh=2400):
         self.thymio = thymio
         self.full_path = full_path
-        self.__update_path()
         self.sensor_handler = SensorHandler(thymio)
         self.interval_sleep = interval_sleep
         self.distance_avoidance = distance_avoidance
@@ -51,6 +50,7 @@ class ObstacleAvoidance:
         self.clear_thresh = clear_thresh
         self.ONE_STEP = 1
         self.FIVE_STEPS = 5
+        self.__update_path()
         self.__obstacle_avoidance()
 
     def __obstacle_avoidance(self):
@@ -279,7 +279,7 @@ class ObstacleAvoidance:
         move(thymio, left_dir, right_dir)
         self.kalman_handler.start_recording()
         time.sleep(distance_time)
-        self.kalman_position = self.kalman_handler.get_kalman(True, left_dir, right_dir)
+        self.kalman_position = self.kalman_handler.get_kalman(True)
         self.kalman_handler.stop_recording()
 
     def rotate(self, thymio: Thymio, angle: float, verbose: bool = False):
@@ -301,5 +301,5 @@ class ObstacleAvoidance:
         move(thymio, left_dir, right_dir)
         self.kalman_handler.start_recording()
         time.sleep(turn_time)
-        self.kalman_position = self.kalman_handler.get_kalman(True, left_dir, right_dir)
+        self.kalman_position = self.kalman_handler.get_kalman(True)
         self.kalman_handler.stop_recording()

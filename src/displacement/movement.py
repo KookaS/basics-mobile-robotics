@@ -116,3 +116,45 @@ def advance_thread(thymio: Thymio, distance: float, speed_ratio: int = 1, verbos
     move(thymio, l_speed, r_speed)
     timer.start()
     return timer
+
+
+def advance(thymio: Thymio, distance: float, speed_ratio: int = 1, verbose: bool = False):
+    """
+    Moves straight of a desired distance
+
+    :param thymio:      the class to which the robot is referred to
+    :param distance:    distance in cm by which we want to move, positive or negative
+    :param speed_ratio:       the speed factor at which the robot goes
+    :param verbose:     printing the speed in the terminal
+    :return: timer to check if it is still alive or not
+    """
+    left_dir, right_dir, distance_time = advance_time(distance, speed_ratio)
+    # Printing the speeds if requested
+    if verbose:
+        # print("\t\t Advance speed & time : ", l_speed, r_speed, distance_time)
+        print("\t\t Advance of cm: ", distance)
+
+    move(thymio, left_dir, right_dir)
+    time.sleep(distance_time)
+    stop(thymio)
+
+
+def rotate(thymio: Thymio, angle: float, verbose: bool = False):
+    """
+    Rotates of the desired angle
+
+    :param thymio:      the class to which the robot is referred to
+    :param angle:       angle in radians by which we want to rotate, positive or negative
+    :param verbose:     printing the speed in the terminal
+    :return: timer to check if it is still alive or not
+    """
+
+    left_dir, right_dir, turn_time = rotate_time(angle)
+    # Printing the speeds if requested
+    if verbose:
+        # print("\t\t Rotate speed & time : ", l_speed, r_speed, turn_time)
+        print("\t\t Rotate of degrees : ", angle)
+
+    move(thymio, left_dir, right_dir)
+    time.sleep(turn_time)
+    stop(thymio)

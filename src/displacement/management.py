@@ -15,8 +15,8 @@ class EventHandler:
     """
     """
 
-    def __init__(self, thymio: Thymio, interval_camera=3, interval_odometry=0.05, interval_sleep=0.01,
-                 obstacle_threshold=2000, epsilon_theta=5, epsilon_r=2.5):
+    def __init__(self, thymio: Thymio, interval_camera=3, interval_odometry=0.1, interval_sleep=0.05,
+                 obstacle_threshold=2000, epsilon_theta=10, epsilon_r=5):
         self.thymio: Thymio = thymio
         self.interval_camera = interval_camera
         self.interval_odometry = interval_odometry
@@ -49,7 +49,7 @@ class EventHandler:
             self.kalman_position = self.kalman_handler.get_kalman(True)
             self.camera_timer = time.time()
         elif time.time() - self.odometry_timer >= self.interval_odometry:
-            self.kalman_position = self.kalman_handler.get_kalman(False)
+            self.kalman_position = self.kalman_handler.get_kalman(True)  # TODO
             self.odometry_timer = time.time()
 
         delta_r, delta_theta = update_path(self.path, self.kalman_position[0], self.kalman_position[1],
@@ -63,7 +63,7 @@ class EventHandler:
             left_dir, right_dir, turn_time = rotate_time(delta_theta)
             left_dir = left_dir * 0.5
             right_dir = right_dir * 0.5
-            move(self.thymio, left_dir, right_dir, verbose=True)
+            move(self.thymio, left_dir, right_dir)
 
         # Apply displacement
         elif abs(delta_r) > self.epsilon_r:
@@ -71,7 +71,7 @@ class EventHandler:
             left_dir, right_dir, distance_time = advance_time(delta_r)
             left_dir = left_dir * 0.5
             right_dir = right_dir * 0.5
-            move(self.thymio, left_dir, right_dir, verbose=True)
+            move(self.thymio, left_dir, right_dir)
 
             # check if local avoidance needed
             sensor_values = self.kalman_handler.sensor_handler.sensor_raw()
@@ -86,6 +86,7 @@ class EventHandler:
         else:
             print("done advancing!")
             stop(self.thymio)
+            time.sleep(10)
             self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
 
         if len(self.path[0]):

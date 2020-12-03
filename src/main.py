@@ -6,6 +6,7 @@ import numpy as np
 from src.displacement.management import EventHandler
 from src.displacement.movement import move, stop
 from src.sensors.state import SensorHandler
+from src.sensors.tuning import MotionTuning
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
 from src.vision.camera import Camera
@@ -46,7 +47,7 @@ def main():
     time.sleep(3)  # To make sure the Thymio has had time to connect
 
     # VelocityTuning(th)
-    # MotionTuning(thymio=th, distance=15, angle=180.0)
+    # MotionTuning(thymio=th, distance=60, angle=180.0)
     EventHandler(th)  # check every interval_check seconds to change scenarios
 
     """

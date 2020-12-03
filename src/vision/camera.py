@@ -120,7 +120,10 @@ class Camera:
         # print('X', x2, 'Y', y2)
         # print('Angle', angle)
         # return [x2 - 2.5, y2 - 2.5, angle]
-        return [yc - 2.5, xc - 2.5, angle]
+        xc = xc - 2.5
+        yc = yc - 2.5
+        yc = self.LENGTH - yc
+        return [xc, yc, angle]
 
     def frame_analysis_green(self, fW, fH, frame):
         # Que QR code, a rajouter cadre + depassement

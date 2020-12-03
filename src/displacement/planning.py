@@ -1,9 +1,4 @@
-import time
-
 import numpy as np
-
-from src.displacement.movement import rotate, advance
-from src.thymio.Thymio import Thymio
 
 
 # this code do a sequence of  displacement corresponding to the entire global path planning
@@ -11,6 +6,7 @@ from src.thymio.Thymio import Thymio
 
 def update_path(path, x, y, theta, case_size):
     if len(path[0]) and len(path[1]):
+        print("x,y", x, y)
         target_x = path[0][0] * case_size
         target_y = path[1][0] * case_size
         delta_x_cm = target_x - x
@@ -32,9 +28,10 @@ def update_path(path, x, y, theta, case_size):
         # Relative rotation to target
         target_theta_rad = np.arctan2(delta_y_cm, delta_x_cm)
         # print("target_theta_rad: ", target_theta_rad)
-        target_theta_deg = np.rad2deg(target_theta_rad)
-        target_theta_deg = np.abs(target_theta_deg) * np.sign(delta_x_cm)
-        # print("target_theta_deg: ", target_theta_deg)
+        target_theta_deg = np.rad2deg(target_theta_rad) + 90
+        # target_theta_deg = np.abs(target_theta_deg) * np.sign(delta_x_cm)
+        print("target_theta_deg: ", target_theta_deg)
+
         delta_theta = target_theta_deg - theta
         delta_theta = (delta_theta + 180.0) % 360.0 - 180.0
         # print("delta_theta: ", delta_theta)
