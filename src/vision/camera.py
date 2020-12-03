@@ -28,6 +28,7 @@ class Camera:
         self.gw = (self.LENGTH + 5)
         self.gh = (self.WIDTH + 5)
         self.colors = Colors()
+        self.cap = None
 
     def open_camera(self):
         filename = int(os.getenv("CAMERA_PORT"))
@@ -39,11 +40,9 @@ class Camera:
     def video_handle(self):
         _, frame = self.cap.read()
 
-        cv2.imwrite('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/frame.jpg',
-                    frame)
+        # cv2.imwrite('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/frame.jpg', frame)
 
-        frame = cv2.imread(
-            'C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/frame.jpg')
+        # frame = cv2.imread('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/frame.jpg')
 
         fH, fW, _ = frame.shape
 

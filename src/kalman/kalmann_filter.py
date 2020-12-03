@@ -13,7 +13,8 @@ from src.vision.camera import Camera
 
 class Kalman:
 
-    def __init__(self, qx=2.8948e-04, qy=8.2668e-04, qt=0.0029, k_delta_sr=1.3400e-04, k_delta_sl=8.3466e-05):
+    def __init__(self, qx=2.8948e-01, qy=8.2668e-01, qt=2.9, k_delta_sr=1.3400e-01, k_delta_sl=8.3466e-02):
+        # qx=2.8948e-04, qy=8.2668e-04, qt=0.0029, k_delta_sr=1.3400e-04, k_delta_sl=8.3466e-05
         self.Ts = 0.1
         self.state_est = [np.array([[0], [0], [0]])]
         self.cov_est = [0.01 * np.ones([3, 3])]
