@@ -1,13 +1,10 @@
-import math
-import threading
 import time
 from enum import Enum
-import numpy as np
 
-from src.kalman.kalmann_filter import Kalman, KalmanHandler
+from src.kalman.kalmann_filter import KalmanHandler
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
-from src.displacement.movement import stop, rotate, advance, advance_time, move, rotate_time
+from src.displacement.movement import stop, advance_time, move, rotate_time
 
 
 def test_saw_wall(thymio: Thymio, wall_threshold=3500, verbose=False) -> bool:
@@ -118,9 +115,9 @@ class ObstacleAvoidance:
                 return obstacle, global_path
 
             if rotated == EventEnum.LEFT:
-                rotate(self.thymio, -30)
+                self.rotate(self.thymio, -30)
             else:
-                rotate(self.thymio, 30)
+                self.rotate(self.thymio, 30)
 
             sensor_values = self.sensor_handler.sensor_raw()["sensor"]
             if (rotated == EventEnum.LEFT) and (sensor_values[4] > 2000):
@@ -144,7 +141,7 @@ class ObstacleAvoidance:
                 while sensor_values[4] < 1000:
                     sensor_values = self.sensor_handler.sensor_raw()["sensor"]
                     print(7)
-                    rotate(self.thymio, -5)
+                    self.rotate(self.thymio, -5)
                 self.rotate(self.thymio, 20)
                 break
             elif (rotated == EventEnum.RIGHT) and (sensor_values[0] < 2000):
@@ -163,16 +160,16 @@ class ObstacleAvoidance:
                     sensor_values = self.sensor_handler.sensor_raw()["sensor"]
                     print(7)
                     self.rotate(self.thymio, 5)
-                rotate(self.thymio, -20)
+                self.rotate(self.thymio, -20)
                 break
         return obstacle, global_path
 
     def __check_global_obstacles_and_global_path(self, length_advance):
         global_path = False
         obstacle = False
-        x = self.position[0]
-        y = self.position[1]
-        theta = self.position[2]
+        x = self.kalman_position[0]
+        y = self.kalman_position[1]
+        theta = self.kalman_position[2]
 
         x_discrete = round(x)
         y_discrete = round(y)
@@ -232,8 +229,8 @@ class ObstacleAvoidance:
         return obstacle, global_path
 
     def __update_path(self):
-        x = self.position[0]
-        y = self.position[1]
+        x = self.kalman_position[0]
+        y = self.kalman_position[1]
         x_discrete = round(x)
         y_discrete = round(y)
 
@@ -258,7 +255,7 @@ class ObstacleAvoidance:
                     break
 
             if (not exit_for) and exit_loop:
-                big_k = k_pos[-1]+1
+                big_k = k_pos[-1] + 1
                 self.full_path[0] = self.full_path[0][big_k:]
                 self.full_path[1] = self.full_path[1][big_k:]
                 return
@@ -267,27 +264,23 @@ class ObstacleAvoidance:
         """
         Moves straight of a desired distance
 
-        :param kwargs:      function to execute at the end of advancing, default stop
-        :param args:        array of non-keyworded arguments of function
-        :param function:    set of keyworded arguments
         :param thymio:      the class to which the robot is referred to
         :param distance:    distance in cm by which we want to move, positive or negative
         :param speed_ratio:       the speed factor at which the robot goes
         :param verbose:     printing the speed in the terminal
         :return: timer to check if it is still alive or not
         """
-        l_speed, r_speed, distance_time = advance_time(distance, speed_ratio)
+        left_dir, right_dir, distance_time = advance_time(distance, speed_ratio)
         # Printing the speeds if requested
         if verbose:
             # print("\t\t Advance speed & time : ", l_speed, r_speed, distance_time)
             print("\t\t Advance of cm: ", distance)
 
-        move(thymio, l_speed, r_speed)
+        move(thymio, left_dir, right_dir)
         self.kalman_handler.start_recording()
-        self.camera_timer = time.time()
-        self.odometry_timer = time.time()
-        time.sleep(distance_time)  # TODO turn time c'est le Ts Non ?
-        stop(thymio)
+        time.sleep(distance_time)
+        self.kalman_position = self.kalman_handler.get_kalman(True, left_dir, right_dir)
+        self.kalman_handler.stop_recording()
 
     def rotate(self, thymio: Thymio, angle: float, verbose: bool = False):
         """
@@ -299,12 +292,14 @@ class ObstacleAvoidance:
         :return: timer to check if it is still alive or not
         """
 
-        l_speed, r_speed, turn_time = rotate_time(angle)
+        left_dir, right_dir, turn_time = rotate_time(angle)
         # Printing the speeds if requested
         if verbose:
             # print("\t\t Rotate speed & time : ", l_speed, r_speed, turn_time)
             print("\t\t Rotate of degrees : ", angle)
 
-        move(thymio, l_speed, r_speed)
-        time.sleep(turn_time)  # TODO turn time c'est le Ts Non ?
-        stop(thymio)
+        move(thymio, left_dir, right_dir)
+        self.kalman_handler.start_recording()
+        time.sleep(turn_time)
+        self.kalman_position = self.kalman_handler.get_kalman(True, left_dir, right_dir)
+        self.kalman_handler.stop_recording()

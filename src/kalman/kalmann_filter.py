@@ -211,7 +211,6 @@ class KalmanHandler:
         self.record_left = filter(lambda number: number < threshold, self.record_left)
 
     def start_recording(self):
-        self.camera.open_camera()
         self.kalman_time = time.time()
         self.recording = True
         print("START RECORDING")
@@ -270,7 +269,6 @@ class KalmanHandler:
         print("camera position", self.camera_position)
 
     def get_camera(self):
-        self.camera.open_camera()
         self.__camera_handler()
         self.kalman_position = self.camera_position
         return self.camera_position

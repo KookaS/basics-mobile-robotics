@@ -7,7 +7,7 @@ from src.displacement.planning import update_path
 from src.kalman.kalmann_filter import KalmanHandler
 from src.local_avoidance.obstacle import ObstacleAvoidance
 from src.path_planning.localization import Localization
-from src.path_planning.occupancy import display_occupancy
+from src.path_planning.occupancy import display_occupancy, full_path_to_points
 from src.thymio.Thymio import Thymio
 
 
@@ -27,6 +27,7 @@ class EventHandler:
 
         self.final_occupancy_grid, self.goal = Localization().localize()
         self.kalman_handler = KalmanHandler(thymio=self.thymio)
+        self.kalman_handler.camera.open_camera()
         self.kalman_position = self.kalman_handler.get_camera()
         self.epsilon_theta = epsilon_theta  # [degrees]
         self.epsilon_r = epsilon_r  # [cm]
@@ -70,13 +71,11 @@ class EventHandler:
             if np.amax(sensor_values["sensor"]).astype(int) >= self.obstacle_threshold:
                 stop(self.thymio)
                 self.kalman_handler.stop_recording()
-                # TODO kalman
                 self.__local_handler()
+                self.kalman_position = self.kalman_handler.get_camera()
                 self.kalman_handler.start_recording()
                 self.camera_timer = time.time()
                 self.odometry_timer = time.time()
-                self.__global_handler()
-                # TODO update the global path instead of __global_init()
         else:
             print("done advancing!")
             stop(self.thymio)
@@ -96,7 +95,7 @@ class EventHandler:
             self.__global_handler()
         else:
             self.kalman_handler.stop_recording()
-            self.camera.close_camera()
+            self.kalman_handler.camera.close_camera()
             stop(self.thymio)
 
     def __local_handler(self):
@@ -105,4 +104,6 @@ class EventHandler:
         This function is called on it's own thread every interval_odometry seconds.
         """
         print("inside __local_handler")
-        ObstacleAvoidance(self.thymio, self.full_path, self.final_occupancy_grid, self.kalman_position)
+        obstacle = ObstacleAvoidance(self.thymio, self.full_path, self.final_occupancy_grid, self.kalman_position)
+        self.full_path = obstacle.full_path
+        self.path = full_path_to_points(self.full_path)  # concatenated path
