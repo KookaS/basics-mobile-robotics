@@ -16,7 +16,7 @@ class EventHandler:
     """
 
     def __init__(self, thymio: Thymio, interval_camera=3, interval_odometry=0.1, interval_sleep=0.05,
-                 obstacle_threshold=2000, epsilon_theta=10, epsilon_r=5):
+                 obstacle_threshold=2000, epsilon_theta=8, epsilon_r=1.25):
         self.thymio: Thymio = thymio
         self.interval_camera = interval_camera
         self.interval_odometry = interval_odometry
@@ -35,7 +35,7 @@ class EventHandler:
         self.path, self.full_path = display_occupancy(self.final_occupancy_grid,
                                                       (self.kalman_position[0], self.kalman_position[1]),
                                                       self.goal)
-        self.kalman_handler.start_recording()
+        # self.kalman_handler.start_recording() TODO
         self.camera_timer = time.time()
         self.odometry_timer = time.time()
         self.__global_handler()
@@ -45,11 +45,15 @@ class EventHandler:
         Manages the thread for the GLOBAL scenario.
         This function is called on it's own thread every interval_odometry seconds.
         """
+        """
         if time.time() - self.camera_timer >= self.interval_camera:
-            self.kalman_position = self.kalman_handler.get_kalman(True)
+            self.kalman_position = self.kalman_handler.get_camera()
+            # self.kalman_position = self.kalman_handler.get_kalman(True)
             self.camera_timer = time.time()
-        elif time.time() - self.odometry_timer >= self.interval_odometry:
-            self.kalman_position = self.kalman_handler.get_kalman(True)  # TODO
+        """
+        if time.time() - self.odometry_timer >= self.interval_odometry:
+            self.kalman_position = self.kalman_handler.get_camera()
+            # self.kalman_position = self.kalman_handler.get_kalman(False)  # TODO
             self.odometry_timer = time.time()
 
         delta_r, delta_theta = update_path(self.path, self.kalman_position[0], self.kalman_position[1],
@@ -79,14 +83,16 @@ class EventHandler:
                 print("INSIDE LOCAL AVOIDANCE!")
                 stop(self.thymio)
                 self.kalman_handler.stop_recording()
+                self.kalman_handler.camera.close_camera()
                 self.__local_handler()
+                self.kalman_handler.camera.open_camera()
                 self.kalman_handler.start_recording()
                 self.camera_timer = time.time()
                 self.odometry_timer = time.time()
         else:
             print("done advancing!")
             stop(self.thymio)
-            time.sleep(10)
+            time.sleep(20)
             self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
 
         if len(self.path[0]):

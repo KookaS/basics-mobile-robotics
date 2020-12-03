@@ -35,16 +35,19 @@ class ObstacleAvoidance:
 
     def __init__(self, thymio: Thymio, full_path, final_occupancy_grid, interval_sleep=0.05,
                  distance_avoidance=2.5,
-                 angle_avoidance=5.0, square=2.5, wall_threshold=3000, clear_thresh=2400):
+                 angle_avoidance=5.0, square=2.5, wall_threshold=3000, clear_thresh=2400, case_size_cm=2.5):
         self.thymio = thymio
         self.full_path = full_path
+        self.case_size_cm = case_size_cm
         self.sensor_handler = SensorHandler(thymio)
         self.interval_sleep = interval_sleep
         self.distance_avoidance = distance_avoidance
         self.angle_avoidance = angle_avoidance
         self.final_occupancy_grid = final_occupancy_grid
         self.kalman_handler = KalmanHandler(thymio=self.thymio)
+        self.kalman_handler.camera.open_camera()
         self.kalman_position = self.kalman_handler.get_camera()
+        self.kalman_position = [self.kalman_position[0] / 2.5, self.kalman_position[1] / 2.5, self.kalman_position[2]]
         self.square = square
         self.wall_threshold = wall_threshold
         self.clear_thresh = clear_thresh
@@ -53,6 +56,7 @@ class ObstacleAvoidance:
         self.width_case = 2.5
         self.__update_path()
         self.__obstacle_avoidance()
+        self.kalman_handler.camera.close_camera()
 
     def __obstacle_avoidance(self):
         sensor_values = self.sensor_handler.sensor_raw()["sensor"]
@@ -206,8 +210,8 @@ class ObstacleAvoidance:
             dir_y = 0
             print(" angle is not between -180 and 180 degrees")
 
-        x_next_step = x_discrete + length_advance * dir_x
-        y_next_step = y_discrete + length_advance * dir_y
+        x_next_step = int(x_discrete + length_advance * dir_x)
+        y_next_step = int(y_discrete + length_advance * dir_y)
         if self.final_occupancy_grid[x_next_step][y_next_step] == 1:
             obstacle = True
             print("next step will reach an obstacle")
@@ -256,9 +260,15 @@ class ObstacleAvoidance:
                         break
                 if exit_for:
                     break
-
+            print("k", i)
             if (not exit_for) and exit_loop:
                 big_k = k_pos[-1] + 1
+                print("k_pos", k_pos)
+                print("big_k", big_k)
+                print("full_path", self.full_path)
+                print("full_path[0]", self.full_path[0])
+                print("full_path[0][big_k:]", self.full_path[0][big_k:])
+
                 self.full_path[0] = self.full_path[0][big_k:]
                 self.full_path[1] = self.full_path[1][big_k:]
                 return
@@ -280,10 +290,12 @@ class ObstacleAvoidance:
             print("\t\t Advance of cm: ", distance)
 
         move(thymio, left_dir, right_dir)
-        self.kalman_handler.start_recording()
+        # self.kalman_handler.start_recording()
         time.sleep(distance_time)
-        self.kalman_position = self.kalman_handler.get_kalman(True)
-        self.kalman_handler.stop_recording()
+        self.kalman_position = self.kalman_handler.get_camera()
+        self.kalman_position = [self.kalman_position[0] / 2.5, self.kalman_position[1] / 2.5, self.kalman_position[2]]
+        # self.kalman_position = self.kalman_handler.get_kalman(True)
+        # self.kalman_handler.stop_recording()
 
     def rotate(self, thymio: Thymio, angle: float, verbose: bool = False):
         """
@@ -302,7 +314,9 @@ class ObstacleAvoidance:
             print("\t\t Rotate of degrees : ", angle)
 
         move(thymio, left_dir, right_dir)
-        self.kalman_handler.start_recording()
+        # self.kalman_handler.start_recording()
         time.sleep(turn_time)
-        self.kalman_position = self.kalman_handler.get_kalman(True)
-        self.kalman_handler.stop_recording()
+        # self.kalman_position = self.kalman_handler.get_kalman(True)
+        self.kalman_position = self.kalman_handler.get_camera()
+        self.kalman_position = [self.kalman_position[0] / 2.5, self.kalman_position[1] / 2.5, self.kalman_position[2]]
+        # self.kalman_handler.stop_recording()

@@ -4,7 +4,7 @@ from src.path_planning.occupancy import display_map
 from src.thymio.Thymio import Thymio
 import cv2
 import numpy as np
-
+import matplotlib.pyplot as plt
 from src.vision.camera import Colors, Camera
 
 LENGTH = 32
@@ -132,12 +132,16 @@ class Localization:
         final_grid = Camera().detect_and_rotate(image)
         vis_map = resize(final_grid, self.alpha, self.beta)
         world = self.rotate(vis_map)
+        plt.figure()
+        plt.imshow(world)
+        plt.show()
         object_grid, occupancy_grid = self.detect_object(world)
 
         return object_grid, occupancy_grid, world
 
     def display_global_path(self, start, goal, path, occupancy_grid):
         # Displaying the map
+        prinnt("start", start)
         fig_astar, ax_astar = display_map(occupancy_grid, self.OCCUPANCY)
         # ax_astar.imshow(occupancy_grid.transpose(), cmap=cmap)
 
@@ -149,14 +153,14 @@ class Localization:
 
     def increased_obstacles_map(self, occupancy_grid):
         nb_rows, nb_cols = occupancy_grid.shape
-        increased_occupancy_grid = np.zeros([nb_rows + 6, nb_cols + 6])
+        increased_occupancy_grid = np.zeros([nb_rows + 10, nb_cols + 10])
         for i in range(nb_rows):
             for j in range(nb_cols):
 
                 if occupancy_grid[i, j] == self.OCCUPIED:
-                    increased_occupancy_grid[i:i + 7, j:j + 7] = np.ones([7, 7])
+                    increased_occupancy_grid[i:i + 11, j:j + 11] = np.ones([11, 11])
 
-        final_occupancy_grid = increased_occupancy_grid[3:LENGTH + 3, 3:WIDTH + 3]
+        final_occupancy_grid = increased_occupancy_grid[5:LENGTH + 5, 5:WIDTH + 5]
         return final_occupancy_grid
 
     def localize(self):
