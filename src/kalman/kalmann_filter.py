@@ -241,8 +241,8 @@ class KalmanHandler:
         """
 
         # print("ts ", ts)
-        print("self.record_left", self.record_left)
-        print("self.record_right", self.record_right)
+        # print("self.record_left", self.record_left)
+        # print("self.record_right", self.record_right)
         print("speed_left", speed_left)
         print("speed_right", speed_right)
         delta_sl = speed_left * ts * self.thymio_speed_to_mm_s / 1000  # [m]
