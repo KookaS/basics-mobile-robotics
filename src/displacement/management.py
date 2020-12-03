@@ -31,8 +31,9 @@ class EventHandler:
         self.epsilon_theta = epsilon_theta  # [degrees]
         self.epsilon_r = epsilon_r  # [cm]
         print("initial positions: ", self.kalman_position)
-        self.path, self.full_path = display_occupancy(self.final_occupancy_grid, (self.kalman_position[0], self.kalman_position[1]),
-                                      self.goal)
+        self.path, self.full_path = display_occupancy(self.final_occupancy_grid,
+                                                      (self.kalman_position[0], self.kalman_position[1]),
+                                                      self.goal)
         self.kalman_handler.start_recording()
         self.camera_timer = time.time()
         self.odometry_timer = time.time()
@@ -48,6 +49,7 @@ class EventHandler:
                                            self.case_size_cm)
         print("delta_r, delta_theta", delta_r, delta_theta)
         # TODO add scaling to slow down when close to goal
+
         # Apply rotation
         if abs(delta_theta) > self.epsilon_theta:
             left_dir, right_dir, turn_time = rotate_time(delta_theta)
@@ -94,6 +96,7 @@ class EventHandler:
             self.__global_handler()
         else:
             self.kalman_handler.stop_recording()
+            self.camera.close_camera()
             stop(self.thymio)
 
     def __local_handler(self):
@@ -102,4 +105,4 @@ class EventHandler:
         This function is called on it's own thread every interval_odometry seconds.
         """
         print("inside __local_handler")
-        ObstacleAvoidance(self.thymio, self.final_occupancy_grid, self.kalman_position)
+        ObstacleAvoidance(self.thymio, self.full_path, self.final_occupancy_grid, self.kalman_position)

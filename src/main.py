@@ -44,21 +44,6 @@ def main():
     """
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
-    position = (10,10)
-
-    th.set_var("motor.left.target", 100)
-    th.set_var("motor.right.target", 100)
-    c=False
-    while(not c):
-        c=test_saw_wall(th)
-    print("On commence a éviter", c)
-    th.set_var("motor.left.target", 0)
-    th.set_var("motor.right.target", 0)
-    ob = ObstacleAvoidance(th)
-    th.set_var("motor.left.target", 0)
-    th.set_var("motor.right.target", 0)
-    while (True):
-        print("end")
 
     # VelocityTuning(th)
     # MotionTuning(thymio=th, distance=15, angle=180.0)

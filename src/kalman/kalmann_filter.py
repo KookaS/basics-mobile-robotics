@@ -221,7 +221,6 @@ class KalmanHandler:
     def stop_recording(self):
         print("STOP RECORDING")
         self.recording = False
-        self.camera.close_camera()
 
     def get_kalman(self, measurement: bool, left_dir, right_dir):
         ts = time.time() - self.kalman_time
