@@ -56,9 +56,7 @@ class Camera:
 
         # detect the blue square and resize the frame
         image = self.detect_and_rotate(frame)
-        plt.figure()
-        plt.imshow(image)
-        plt.show()
+
         fW, fH, _ = image.shape
         print("fw,fh", fW, fH)
         # print("fw,fh", fW,fH)
@@ -179,9 +177,7 @@ class Camera:
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, self.colors.low_yellow, self.colors.up_yellow)
         res = cv2.bitwise_and(frame, frame, mask=mask)
-        plt.figure()
-        plt.imshow(mask)
-        plt.show()
+
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
         areas = [cv2.contourArea(c) for c in contours]
         # print("length: ", len(areas))
