@@ -40,7 +40,7 @@ class EventHandler:
         self.case_size_cm = 2.5
         self.sensor_handler = SensorHandler(self.thymio)
         self.covariance = 1 * np.ones([3, 3])
-        self.thymio_speed_to_mm_s = float(os.getenv("SPEED_80_TO_MM_S"))
+        #self.thymio_speed_to_mm_s = float(os.getenv("SPEED_80_TO_MM_S"))
         self.kalman_time = time.time()
         self.ts = 0
         self.delta_sr = 0
@@ -76,7 +76,7 @@ class EventHandler:
 
     def __global_init(self):
         self.goal = (20, 10)  # TO REMOVE
-        self.path = display_occupancy(self.final_occupancy_grid, (self.position[0], self.position[1]),
+        self.path, self.full_path = display_occupancy(self.final_occupancy_grid, (self.position[0], self.position[1]),
                                       self.goal)
         self.__global_handler()
 
@@ -143,7 +143,7 @@ class EventHandler:
         This function is called on it's own thread every interval_sleep seconds.
         """
         print("inside __local_handler")
-        ObstacleAvoidance(self.thymio, self.final_occupancy_grid, self.position)
+        ObstacleAvoidance(self.full_path, self.thymio, self.final_occupancy_grid, self.position)
         self.__global_handler()
 
     def __stop_handler(self):

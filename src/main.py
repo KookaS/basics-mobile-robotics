@@ -7,6 +7,8 @@ from src.displacement.management import EventHandler
 from src.sensors.tuning import MotionTuning, VelocityTuning
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
+from src.local_avoidance.obstacle import test_saw_wall, ObstacleAvoidance
+
 
 # Adding the src folder in the current directory as it contains the script with the Thymio class
 from src.vision.camera import test_camera, record_project, camera_tweak
@@ -19,7 +21,6 @@ UP_BLUE = np.array([109, 225, 174])  # à changer dans management
 def print_thymio(thymio: Thymio):
     """
     Print the variables of Thymio
-
     :param thymio: The file location of the spreadsheet
     """
     print('All Thymio instance attributes:')
@@ -40,9 +41,24 @@ def main():
         temp = record_project()
         print(temp)
     """
-
+    print("JE SUIS DANS LE MAIN")
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
+    position = (10,10)
+
+    th.set_var("motor.left.target", 100)
+    th.set_var("motor.right.target", 100)
+    c=False
+    while(not c):
+        c=test_saw_wall(th)
+    print("On commence a éviter", c)
+    th.set_var("motor.left.target", 0)
+    th.set_var("motor.right.target", 0)
+    ob = ObstacleAvoidance(th)
+    th.set_var("motor.left.target", 0)
+    th.set_var("motor.right.target", 0)
+    while (True):
+        print("end")
 
     # VelocityTuning(th)
     # MotionTuning(thymio=th, distance=15, angle=180.0)
