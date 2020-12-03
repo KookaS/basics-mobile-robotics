@@ -3,6 +3,8 @@ import threading
 import time
 from enum import Enum
 import numpy as np
+
+from src.kalman.kalmann_filter import Kalman
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from src.displacement.movement import stop, rotate, advance

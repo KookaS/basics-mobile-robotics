@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 from src.path_planning.a_star import A_Star
 
-LENGTH = 32
-WIDTH = 29
-
 # constants
+LENGTH = 29
+WIDTH = 32
+
 LOCALIZATION = 0
 OCCUPANCY = 1
 FREE = 0
@@ -200,7 +200,7 @@ def increased_obstacles_map(occupancy_grid):
             if occupancy_grid[i, j] == OCCUPIED:
                 increased_occupancy_grid[i:i + 7, j:j + 7] = np.ones([7, 7])
 
-    final_occupancy_grid = increased_occupancy_grid[3:(WIDTH + 2), 3:(LENGTH + 2)]
+    final_occupancy_grid = increased_occupancy_grid[3:(WIDTH + 3), 3:(LENGTH + 3)]
     return final_occupancy_grid
 
 
@@ -217,6 +217,7 @@ def display_global_path(start, goal, path, occupancy_grid):
 
     ax_astar.set_ylabel('y axis')
     ax_astar.set_xlabel('x axis')
+    plt.figure()
     plt.show()
 
 
@@ -290,12 +291,16 @@ def full_path_to_points(path):
 
 def display_occupancy(final_occupancy_grid, position, goal):
     # Run the A* algorithm
-    position[0] = int(position[0]/2.5)
-    position[1] = int(position[1]/2.5)
-
-    full_path = A_Star(position, goal, final_occupancy_grid)  # all steps in path
-    full_path = np.array(full_path).reshape(-1, 2).transpose()
-    new_path = full_path_to_points(full_path)  # concatenated path
-    display_global_path(position, goal, new_path, final_occupancy_grid.transpose())
+    x = int(position[1] / 2.5)
+    y = LENGTH - int(position[0] / 2.5)
+    new_pos = (x, y)
+    print("start: ", new_pos)
+    print("goal: ", goal)
+    path = A_Star(new_pos, goal, final_occupancy_grid)  # all steps in path
+    path = np.array(path).reshape(-1, 2).transpose()
+    new_path = full_path_to_points(path)  # concatenated path
+    display_global_path(new_pos, goal, new_path, final_occupancy_grid.transpose())
+    full_path = np.delete(path, 0, 1)
     new_path = np.delete(new_path, 0, 1)
+    print("path", new_path)
     return new_path, full_path

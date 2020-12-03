@@ -1,7 +1,9 @@
 import numpy as np
 import math
+
 LENGTH = 32
 WIDTH = 29
+
 
 def reconstruct_path(cameFrom, current):
     """
@@ -91,7 +93,6 @@ def A_Star(start, goal, final_occupancy_grid):
 
     # The set of visited nodes that need to be (re-)expanded, i.e. for which the neighbors need to be explored
     # Initially, only the start node is known.
-    print("Start:", start)
     openSet = [start]
 
     # The set of visited nodes that no longer need to be expanded.

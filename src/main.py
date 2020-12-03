@@ -4,19 +4,18 @@ import pprint
 import time
 import numpy as np
 from src.displacement.management import EventHandler
-from src.sensors.tuning import MotionTuning, VelocityTuning
+from src.displacement.movement import move, stop
+from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
+from src.vision.camera import Camera
 from src.local_avoidance.obstacle import test_saw_wall, ObstacleAvoidance
 
 
 # Adding the src folder in the current directory as it contains the script with the Thymio class
-from src.vision.camera import test_camera, record_project, camera_tweak
-
 sys.path.insert(0, os.path.join(os.getcwd(), 'src'))
 load_dotenv()
-LOW_BLUE = np.array([98, 134, 106])  # à changer dans management
-UP_BLUE = np.array([109, 225, 174])  # à changer dans management
+
 
 def print_thymio(thymio: Thymio):
     """
@@ -32,16 +31,17 @@ def print_thymio(thymio: Thymio):
 
 
 def main():
-    # test_camera() # Position not accurate!!!
-    # camera_tweak(LOW_BLUE, UP_BLUE)
-    # time.sleep(30)
+    """
+
+    :return:
+    """
 
     """
+    cam = Camera()
+    cam.open_camera()
     while True:
-        temp = record_project()
-        print(temp)
+        print(cam.test_camera())
     """
-    print("JE SUIS DANS LE MAIN")
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
     position = (10,10)
@@ -62,8 +62,22 @@ def main():
 
     # VelocityTuning(th)
     # MotionTuning(thymio=th, distance=15, angle=180.0)
-    EventHandler(th, interval_check=1, interval_sleep=0.05,
-                 goal_threshold=1)  # check every interval_check seconds to change scenarios
+    EventHandler(th)  # check every interval_check seconds to change scenarios
+
+    """
+    sensor_handler = SensorHandler(th)
+    move(th, 1, -1)
+    print("l_speed, r_speed")
+    now = time.time()
+    while time.time()-now < 10:
+        speed = sensor_handler.speed()
+        speed_right = speed['right_speed']
+        speed_left = speed['left_speed']
+        speed_right = speed_right if speed_right <= 2 ** 15 else speed_right - 2 ** 16
+        speed_left = speed_left if speed_left <= 2 ** 15 else speed_left - 2 ** 16
+        print(speed_left, speed_right)
+    stop(th)
+    """
 
     print("END OF MAIN!")
 
