@@ -4,6 +4,8 @@ import pprint
 import time
 import numpy as np
 from src.displacement.management import EventHandler
+from src.displacement.movement import move, stop
+from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
 from src.vision.camera import Camera
@@ -34,8 +36,10 @@ def main():
     """
 
     """
+    cam = Camera()
+    cam.open_camera()
     while True:
-        print(Camera().record_project())
+        print(cam.test_camera())
     """
 
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
@@ -51,6 +55,21 @@ def main():
     # VelocityTuning(th)
     # MotionTuning(thymio=th, distance=15, angle=180.0)
     EventHandler(th)  # check every interval_check seconds to change scenarios
+
+    """
+    sensor_handler = SensorHandler(th)
+    move(th, 1, -1)
+    print("l_speed, r_speed")
+    now = time.time()
+    while time.time()-now < 10:
+        speed = sensor_handler.speed()
+        speed_right = speed['right_speed']
+        speed_left = speed['left_speed']
+        speed_right = speed_right if speed_right <= 2 ** 15 else speed_right - 2 ** 16
+        speed_left = speed_left if speed_left <= 2 ** 15 else speed_left - 2 ** 16
+        print(speed_left, speed_right)
+    stop(th)
+    """
 
     print("END OF MAIN!")
 

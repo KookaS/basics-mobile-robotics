@@ -13,7 +13,7 @@ from src.vision.camera import Camera
 
 class Kalman:
 
-    def __init__(self, qx=0.01, qy=0.01, qt=0.02, k_delta_sr=0.01, k_delta_sl=0.01):
+    def __init__(self, qx=2.8948e-04, qy=8.2668e-04, qt=0.0029, k_delta_sr=0.01, k_delta_sl=0.01):
         self.Ts = 0.1
         self.state_est = [np.array([[0], [0], [0]])]
         self.cov_est = [0.01 * np.ones([3, 3])]
@@ -211,6 +211,7 @@ class KalmanHandler:
         self.record_left = filter(lambda number: number < threshold, self.record_left)
 
     def start_recording(self):
+        self.camera.open_camera()
         self.kalman_time = time.time()
         self.recording = True
         print("START RECORDING")
@@ -220,28 +221,29 @@ class KalmanHandler:
     def stop_recording(self):
         print("STOP RECORDING")
         self.recording = False
+        self.camera.close_camera()
 
     def get_kalman(self, measurement: bool, left_dir, right_dir):
         ts = time.time() - self.kalman_time
 
-        """
         if not len(self.record_left) and not len(self.record_right):
             print("NO VALUES RECORDED! length of speed array: ", len(self.record_left), len(self.record_right))
             return self.kalman_position
 
         speed_left = sum(self.record_left) / len(self.record_left)
         speed_right = sum(self.record_right) / len(self.record_right)
-        
-        speed_left = left_dir*100
-        speed_right = right_dir*100
+
         """
         speed = self.sensor_handler.speed()
         speed_right = speed['right_speed']
         speed_left = speed['left_speed']
         speed_right = speed_right if speed_right <= 2 ** 15 else speed_right - 2 ** 16
         speed_left = speed_left if speed_left <= 2 ** 15 else speed_left - 2 ** 16
+        """
 
         # print("ts ", ts)
+        print("self.record_left", self.record_left)
+        print("self.record_right", self.record_right)
         print("speed_left", speed_left)
         print("speed_right", speed_right)
         delta_sl = speed_left * ts * self.thymio_speed_to_mm_s / 1000  # [m]
@@ -269,6 +271,7 @@ class KalmanHandler:
         print("camera position", self.camera_position)
 
     def get_camera(self):
+        self.camera.open_camera()
         self.__camera_handler()
         self.kalman_position = self.camera_position
         return self.camera_position

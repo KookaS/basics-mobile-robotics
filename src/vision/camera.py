@@ -20,19 +20,6 @@ class Colors:
         self.up_blue = np.array([119, 255, 215])
 
 
-def video_handle(filename):
-    cap = cv2.VideoCapture(filename)
-    _, frame = cap.read()
-
-    cv2.imwrite('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/frame.jpg', frame)
-    cap.release()
-    frame = cv2.imread('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/frame.jpg')
-
-    fH, fW, _ = frame.shape
-
-    return fW, fH, frame
-
-
 class Camera:
     def __init__(self):
         self.LENGTH = 80
@@ -41,11 +28,30 @@ class Camera:
         self.gh = (self.WIDTH + 5)
         self.colors = Colors()
 
-    def record_project(self):
+    def open_camera(self):
         filename = int(os.getenv("CAMERA_PORT"))
+        self.cap = cv2.VideoCapture(filename)
+
+    def close_camera(self):
+        self.cap.release()
+
+    def video_handle(self):
+        _, frame = self.cap.read()
+
+        cv2.imwrite('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/frame.jpg',
+                    frame)
+
+        frame = cv2.imread(
+            'C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/frame.jpg')
+
+        fH, fW, _ = frame.shape
+
+        return fW, fH, frame
+
+    def record_project(self):
 
         # open the video and save the frame and return the fW,fH and the frame
-        fW, fH, frame = video_handle(filename)
+        fW, fH, frame = self.video_handle()
 
         # detect the blue square and resize the frame
         image = self.detect_and_rotate(frame)

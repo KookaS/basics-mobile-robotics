@@ -15,7 +15,7 @@ class EventHandler:
     """
     """
 
-    def __init__(self, thymio: Thymio, interval_camera=10, interval_odometry=0.05, interval_sleep=0.01,
+    def __init__(self, thymio: Thymio, interval_camera=3, interval_odometry=0.05, interval_sleep=0.01,
                  obstacle_threshold=2000, epsilon_theta=5, epsilon_r=2.5):
         self.thymio: Thymio = thymio
         self.interval_camera = interval_camera
@@ -24,6 +24,7 @@ class EventHandler:
         self.obstacle_threshold = obstacle_threshold
         self.case_size_cm = 2.5  # [cm]
         stop(self.thymio)
+
         self.final_occupancy_grid, self.goal = Localization().localize()
         self.kalman_handler = KalmanHandler(thymio=self.thymio)
         self.kalman_position = self.kalman_handler.get_camera()
@@ -32,7 +33,7 @@ class EventHandler:
         print("initial positions: ", self.kalman_position)
         self.path = display_occupancy(self.final_occupancy_grid, (self.kalman_position[0], self.kalman_position[1]),
                                       self.goal)
-        # self.kalman_handler.start_recording() TODO
+        self.kalman_handler.start_recording()
         self.camera_timer = time.time()
         self.odometry_timer = time.time()
         self.__global_handler()
