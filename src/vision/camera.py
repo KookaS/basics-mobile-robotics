@@ -65,19 +65,36 @@ class Camera:
         # detect both yellow and green square for further angle and center computation
         x2g, y2g, xfg, yfg, frameg = self.frame_analysis_green(fW, fH, image)
         x2y, y2y, xfy, yfy, framey = self.frame_analysis_yellow(fW, fH, image)
+
+        x2y = xfy
+        x2g = xfg
+        y2g = yfg
+        y2y = yfy
         ratio = (self.gw / fH, self.gh / fW)
 
-        xfg = xfg * ratio[0]
-        xfy = xfy * ratio[0]
-        yfg = yfg * ratio[1]
-        yfy = yfy * ratio[1]
+        xfg_temp = fW - (fH - yfg)
+        yfg = xfg
+        xfg = xfg_temp
 
-        print("x2g, y2g, xfg, yfg", x2g, y2g, xfg, yfg)
-        print("x2y, y2y, xfy, yfy", x2y, y2y, xfy, yfy)
+        xfy_temp = fW - (fH - yfy)
+        yfy = xfy
+        xfy = xfy_temp
+
+        angle = self.give_thymio_angle(image, xfy, yfy, xfg, yfg)
+
+        x2g = x2g * ratio[0]
+        x2y = x2y * ratio[0]
+        y2g = y2g * ratio[1]
+        y2y = y2y * ratio[1]
+
+        # print("x2g, y2g, xfg, yfg", x2g, y2g, xfg, yfg)
+        # print("x2y, y2y, xfy, yfy", x2y, y2y, xfy, yfy)
         # compute the center of the thymio & gives thymio angle
-        xc = (xfg + xfy) / 2
-        yc = (yfg + yfy) / 2
-        print("xc,yc", xc, yc)
+        xc = (x2g + x2y) / 2
+        yc = (y2g + y2y) / 2
+        print("xc,yc", yc, xc)
+        """
+        
         x2g_temp = self.LENGTH - y2g
         y2g = x2g
         x2g = x2g_temp
@@ -96,8 +113,7 @@ class Camera:
 
         x2 = (x2g + x2y) / 2
         y2 = (y2g + y2y) / 2
-
-        angle = self.give_thymio_angle(image, xfy, yfy, xfg, yfg)
+        """
 
         # plot the image with the drawings and print the X,Y coordinate and the angle
         # plt.figure()
@@ -105,7 +121,8 @@ class Camera:
         # plt.show()
         # print('X', x2, 'Y', y2)
         # print('Angle', angle)
-        return [x2 - 2.5, y2 - 2.5, angle]
+        # return [x2 - 2.5, y2 - 2.5, angle]
+        return [yc - 2.5, xc - 2.5, angle]
 
     def frame_analysis_green(self, fW, fH, frame):
         # Que QR code, a rajouter cadre + depassement

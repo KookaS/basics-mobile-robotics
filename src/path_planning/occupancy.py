@@ -291,8 +291,8 @@ def full_path_to_points(path):
 
 def display_occupancy(final_occupancy_grid, position, goal):
     # Run the A* algorithm
-    x = int(position[1] / 2.5)
-    y = LENGTH - int(position[0] / 2.5)
+    x = round(position[0] / 2.5)
+    y = LENGTH - round(position[1] / 2.5)
     new_pos = (x, y)
     print("start: ", new_pos)
     print("goal: ", goal)
