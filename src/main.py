@@ -33,38 +33,23 @@ def print_thymio(thymio: Thymio):
 
 def main():
     """
-
+    Main function that that is used to run the code
     :return:
     """
-    # Camera().camera_tweak()
+
     """
     cam = Camera()
     cam.open_camera()
+    # cam.camera_tweak()
     while True:
         print(cam.record_project())
     """
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     time.sleep(3)  # To make sure the Thymio has had time to connect
 
-    # VelocityTuning(th)
-    # MotionTuning(thymio=th, distance=60, angle=180.0)
-    EventHandler(th)  # check every interval_check seconds to change scenarios
-
-    """
-    sensor_handler = SensorHandler(th)
-    move(th, 1, -1)
-    print("l_speed, r_speed")
-    now = time.time()
-    while time.time()-now < 10:
-        speed = sensor_handler.speed()
-        speed_right = speed['right_speed']
-        speed_left = speed['left_speed']
-        speed_right = speed_right if speed_right <= 2 ** 15 else speed_right - 2 ** 16
-        speed_left = speed_left if speed_left <= 2 ** 15 else speed_left - 2 ** 16
-        print(speed_left, speed_right)
-    stop(th)
-    """
-
+    # VelocityTuning(th)    # velocity tuning
+    # MotionTuning(thymio=th, distance=60, angle=180.0) # motion tuning
+    EventHandler(th)  # all the different scenarios are handled
     print("END OF MAIN!")
 
 

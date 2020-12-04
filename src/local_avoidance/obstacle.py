@@ -32,10 +32,16 @@ class EventEnum(Enum):
 
 
 class ObstacleAvoidance:
+    """
+    Local avoidance class that manages physical obstacles by sensing them and avoid them.
+    """
 
     def __init__(self, thymio: Thymio, full_path, final_occupancy_grid, interval_sleep=0.05,
                  distance_avoidance=2.5,
                  angle_avoidance=5.0, square=2.5, wall_threshold=3000, clear_thresh=2400, case_size_cm=2.5):
+        """
+        Constructor to initialize the sensors, camera, kalman and class variables.
+        """
         self.thymio = thymio
         self.full_path = full_path
         self.case_size_cm = case_size_cm
@@ -47,8 +53,10 @@ class ObstacleAvoidance:
         self.kalman_handler = KalmanHandler(thymio=self.thymio)
         self.kalman_handler.camera.open_camera()
         self.kalman_position = self.kalman_handler.get_camera()
-        self.kalman_position = [self.kalman_position[0] / 2.5, self.kalman_position[1] / 2.5, self.kalman_position[2]]
+        # cm grid -> cube grid
         self.square = square
+        self.kalman_position = [self.kalman_position[0] / self.square, self.kalman_position[1] / self.square,
+                                self.kalman_position[2]]
         self.wall_threshold = wall_threshold
         self.clear_thresh = clear_thresh
         self.ONE_STEP = 1
@@ -59,6 +67,9 @@ class ObstacleAvoidance:
         self.kalman_handler.camera.close_camera()
 
     def __obstacle_avoidance(self):
+        """
+
+        """
         sensor_values = self.sensor_handler.sensor_raw()["sensor"]
         if (sensor_values[1] > self.wall_threshold) and (sensor_values[3] > self.wall_threshold):  # both sides
             if sensor_values[3] > sensor_values[1]:
@@ -174,8 +185,8 @@ class ObstacleAvoidance:
     def __check_global_obstacles_and_global_path(self, length_advance):
         global_path = False
         obstacle = False
-        x = self.kalman_position[0]/self.width_case
-        y = self.kalman_position[1]/self.width_case
+        x = self.kalman_position[0] / self.width_case
+        y = self.kalman_position[1] / self.width_case
         theta = self.kalman_position[2]
 
         x_discrete = round(x)
@@ -236,8 +247,8 @@ class ObstacleAvoidance:
         return obstacle, global_path
 
     def __update_path(self):
-        x = self.kalman_position[0]/self.width_case
-        y = self.kalman_position[1]/self.width_case
+        x = self.kalman_position[0] / self.width_case
+        y = self.kalman_position[1] / self.width_case
         x_discrete = round(x)
         y_discrete = round(y)
 
