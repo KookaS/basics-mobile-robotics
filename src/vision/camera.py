@@ -57,7 +57,7 @@ class Camera:
         image = self.detect_and_rotate(frame)
 
         fW, fH, _ = image.shape
-        print("fw,fh", fW, fH)
+        # print("fw,fh", fW, fH)
         # print("fw,fh", fW,fH)
         # detect both yellow and green square for further angle and center computation
         x2g, y2g, xfg, yfg, frameg = self.frame_analysis_green(fW, fH, image)
@@ -89,7 +89,7 @@ class Camera:
         # compute the center of the thymio & gives thymio angle
         xc = (x2g + x2y) / 2
         yc = (y2g + y2y) / 2
-        print("xc,yc", yc, xc)
+        # print("xc,yc", yc, xc)
         """
         
         x2g_temp = self.LENGTH - y2g

@@ -10,7 +10,7 @@ from src.sensors.tuning import MotionTuning
 from src.thymio.Thymio import Thymio
 from dotenv import load_dotenv
 from src.vision.camera import Camera
-from src.local_avoidance.obstacle import test_saw_wall, ObstacleAvoidance
+from src.local_avoidance.obstacle import ObstacleAvoidance
 
 
 # Adding the src folder in the current directory as it contains the script with the Thymio class

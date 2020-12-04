@@ -156,6 +156,8 @@ def display_occupancy(final_occupancy_grid, position, goal):
     new_path = full_path_to_points(path)  # concatenated path
     display_global_path(new_pos, goal, new_path, final_occupancy_grid.transpose())
     full_path = np.delete(path, 0, 1)
+    # full_path.tolist()
     new_path = np.delete(new_path, 0, 1)
+    # new_path.tolist()
     print("path", new_path)
     return new_path, full_path
