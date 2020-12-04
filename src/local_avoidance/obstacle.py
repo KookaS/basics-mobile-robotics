@@ -38,13 +38,22 @@ class ObstacleAvoidance:
 
     def __init__(self, thymio: Thymio, full_path, final_occupancy_grid, interval_sleep=0.05,
                  distance_avoidance=2.5,
-                 angle_avoidance=5.0, square=2.5, wall_threshold=3000, clear_thresh=2400, case_size_cm=2.5):
+                 angle_avoidance=5.0, square=2.5, wall_threshold=3000, clear_thresh=2400):
         """
         Constructor to initialize the sensors, camera, kalman and class variables.
+
+        param thymio: class thymio, reference to the robot
+        param full_path: list of all intermediary points to reach the goal
+        param final_occupancy_grid: map gris with obstacle size increase
+        param interval_sleep: time constant to sleep before function loop calls
+        param angle_avoidance: angle steps to rotate
+        param square: square size of the grid map
+        param wall_threshold: threashold to detect a wall or not
+        param clear_threash: ???
+
         """
         self.thymio = thymio
         self.full_path = full_path
-        self.case_size_cm = case_size_cm
         self.sensor_handler = SensorHandler(thymio)
         self.interval_sleep = interval_sleep
         self.distance_avoidance = distance_avoidance
