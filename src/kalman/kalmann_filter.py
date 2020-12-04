@@ -5,6 +5,7 @@ import time
 import numpy as np
 import math
 
+from src.Affichage.affichage import plot
 from src.displacement.movement import stop
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
@@ -175,6 +176,7 @@ class Kalman:
             state_est = state_est_a_priori
             cov_est = cov_est_a_priori
 
+        plot(state_est, cov_est)
         return state_est.flatten().tolist(), cov_est
 
 
@@ -287,6 +289,7 @@ class KalmanHandler:
         # m & rad -> cm & degrees
         self.kalman_position = [temp[0] * 100, temp[1] * 100, (np.rad2deg(temp[2]) + 180.0) % 360.0 - 180.0]
         print("kalman position", self.kalman_position)
+
         return self.kalman_position
 
     def __camera_handler(self):
