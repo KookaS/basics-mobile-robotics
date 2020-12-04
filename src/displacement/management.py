@@ -16,7 +16,7 @@ class EventHandler:
     This class manages all the different scenarios of the robot until it reaches the goal.
     """
 
-    def __init__(self, thymio: Thymio, interval_camera=1, interval_odometry=0.1, interval_sleep=0.05,
+    def __init__(self, thymio: Thymio, interval_camera=1.5, interval_odometry=1, interval_sleep=0.05,
                  obstacle_threshold=4100, epsilon_theta=8, epsilon_r=1.25):
         """
         Constructor of the class EventHandler.

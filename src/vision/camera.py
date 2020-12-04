@@ -15,7 +15,7 @@ class Colors:
         self.up_green = np.array([80, 157, 200])
         self.low_yellow = np.array([12, 55, 200])
         self.up_yellow = np.array([27, 121, 255])
-        self.low_red = np.array([163, 111, 174])
+        self.low_red = np.array([163, 111, 125])
         self.up_red = np.array([[179, 193, 255]])
         self.low_blue = np.array([98, 123, 88])
         self.up_blue = np.array([119, 255, 215])

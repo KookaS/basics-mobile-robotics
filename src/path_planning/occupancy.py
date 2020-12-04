@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
 from src.path_planning.a_star import A_Star
-
+import time
 # constants
 LENGTH = 29
 WIDTH = 32
@@ -55,21 +55,6 @@ def display_map(grid, type_map):
         plt.title("Localization grid")
 
     return fig, ax
-
-
-def increased_obstacles_map(occupancy_grid):
-    nb_rows = len(occupancy_grid)
-    nb_cols = len(occupancy_grid[0])
-    increased_occupancy_grid = np.zeros([nb_rows + 6, nb_cols + 6])
-
-    for i in range(len(occupancy_grid)):
-        for j in range(len(occupancy_grid[0])):
-
-            if occupancy_grid[i, j] == OCCUPIED:
-                increased_occupancy_grid[i:i + 7, j:j + 7] = np.ones([7, 7])
-
-    final_occupancy_grid = increased_occupancy_grid[3:(WIDTH + 3), 3:(LENGTH + 3)]
-    return final_occupancy_grid
 
 
 def display_global_path(start, goal, path, occupancy_grid):

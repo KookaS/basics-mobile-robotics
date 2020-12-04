@@ -108,15 +108,22 @@ class Localization:
     def detect_object(self, world):
 
         # create the map with only the obstucale to non-zero
+        plt.figure()
+        plt.imshow(world)
+        plt.show()
         world_hsv = cv2.cvtColor(world, cv2.COLOR_BGR2HSV)
         mask_red = cv2.inRange(world_hsv, self.colors.low_red, self.colors.up_red)
         occupancy_grid = np.array(mask_red)
+        plt.figure()
+        plt.imshow(occupancy_grid)
+        plt.show()
         world_rows, world_cols, _ = world.shape
         # obstacle_grid = [[[self.zero_init, self.zero_init, self.zero_init] for r in range(world_cols)] for c in
         #                 range(world_rows)]
 
         world_hsv = cv2.cvtColor(world, cv2.COLOR_BGR2HSV)
         mask_goal = cv2.inRange(world_hsv, self.colors.low_blue, self.colors.up_blue)
+
         goal_x, goal_y = (15, 15)  # goal by default
 
         # look for the obstacle and increase there size
@@ -153,14 +160,14 @@ class Localization:
 
     def increased_obstacles_map(self, occupancy_grid):
         nb_rows, nb_cols = occupancy_grid.shape
-        increased_occupancy_grid = np.zeros([nb_rows + 10, nb_cols + 10])
+        increased_occupancy_grid = np.zeros([nb_rows + 6, nb_cols + 6])
         for i in range(nb_rows):
             for j in range(nb_cols):
 
                 if occupancy_grid[i, j] == self.OCCUPIED:
-                    increased_occupancy_grid[i:i + 11, j:j + 11] = np.ones([11, 11])
+                    increased_occupancy_grid[i:i + 7, j:j + 7] = np.ones([7, 7])
 
-        final_occupancy_grid = increased_occupancy_grid[5:LENGTH + 5, 5:WIDTH + 5]
+        final_occupancy_grid = increased_occupancy_grid[3:LENGTH + 3, 3:WIDTH + 3]
         return final_occupancy_grid
 
     def localize(self):
