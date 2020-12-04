@@ -1,3 +1,4 @@
+import threading
 import time
 
 import numpy as np
@@ -9,6 +10,11 @@ from src.local_avoidance.obstacle import ObstacleAvoidance
 from src.path_planning.localization import Localization
 from src.path_planning.occupancy import display_occupancy, full_path_to_points
 from src.thymio.Thymio import Thymio
+from src.vision.camera import Camera
+
+FORWARD = 0
+TURN = 1
+STOP = 2
 
 
 class EventHandler:
@@ -16,7 +22,7 @@ class EventHandler:
     This class manages all the different scenarios of the robot until it reaches the goal.
     """
 
-    def __init__(self, thymio: Thymio, interval_camera=1.5, interval_odometry=1, interval_sleep=0.05,
+    def __init__(self, thymio: Thymio, interval_camera=1.6, interval_odometry=0.2, interval_sleep=0.08,
                  obstacle_threshold=4100, epsilon_theta=8, epsilon_r=1.25):
         """
         Constructor of the class EventHandler.
@@ -39,17 +45,19 @@ class EventHandler:
         self.obstacle_threshold = obstacle_threshold
         self.case_size_cm = 2.5  # [cm]
         self.final_occupancy_grid, self.goal = Localization().localize()
-        self.kalman_handler = KalmanHandler(thymio=self.thymio)
-        self.kalman_handler.camera.open_camera()
+        self.camera = Camera()
+        self.camera.open_camera()
+        self.kalman_handler = KalmanHandler(self.thymio, self.camera)
         self.kalman_position = self.kalman_handler.get_camera()
         self.epsilon_theta = epsilon_theta  # [degrees]
         self.epsilon_r = epsilon_r  # [cm]
         self.path, self.full_path = display_occupancy(self.final_occupancy_grid,
                                                       (self.kalman_position[0], self.kalman_position[1]),
                                                       self.goal)
-        self.kalman_handler.start_recording()  # TODO
+        # self.kalman_handler.start_recording()
         self.camera_timer = time.time()
         self.odometry_timer = time.time()
+        # self.state = STOP
         self.__global_handler()
 
     def __global_handler(self):
@@ -63,7 +71,11 @@ class EventHandler:
             # self.kalman_position = self.kalman_handler.get_camera()
             self.kalman_position = self.kalman_handler.get_kalman(True)
             print("kalman position", self.kalman_position)
+            # self.kalman_handler.stop_recording()
+            # self.kalman_handler = KalmanHandler(self.thymio, self.camera)
+            # self.kalman_handler.start_recording()
             self.camera_timer = time.time()
+            self.odometry_timer = time.time()
 
         # odometry kalman
         if time.time() - self.odometry_timer >= self.interval_odometry:
@@ -102,17 +114,16 @@ class EventHandler:
 
             # check if local avoidance needed
             sensor_values = self.kalman_handler.sensor_handler.sensor_raw()
-            if np.amax(sensor_values["sensor"]).astype(int) >= self.obstacle_threshold:
-                # print("INSIDE LOCAL AVOIDANCE!")
+            if np.amax(sensor_values["sensor"][0:4]).astype(int) >= self.obstacle_threshold:
                 stop(self.thymio)
-                self.kalman_handler.stop_recording()
+                # self.kalman_handler.stop_recording()
                 self.__local_handler()
-                self.kalman_handler.start_recording()
+                # self.kalman_handler.start_recording()
                 self.camera_timer = time.time()
                 self.odometry_timer = time.time()
         else:
             # point in the path has been reached
-            # print("done advancing!")
+            # self.state = STOP
             stop(self.thymio)
             print("REMOVE POINTS", self.path[0][0], self.path[1][0])
             self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
@@ -124,8 +135,8 @@ class EventHandler:
 
         # no more path, go back to main
         else:
-            self.kalman_handler.stop_recording()
-            self.kalman_handler.camera.close_camera()
+            # self.kalman_handler.stop_recording()
+            self.camera.close_camera()
             stop(self.thymio)
 
     def __local_handler(self):

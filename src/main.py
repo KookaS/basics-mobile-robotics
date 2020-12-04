@@ -36,14 +36,14 @@ def main():
     Main function that that is used to run the code
     :return:
     """
-    # sys.setrecursionlimit(20000)
+    sys.setrecursionlimit(3000)
     th = Thymio.serial(port=os.getenv("COM_PORT"), refreshing_rate=0.1)
     # time.sleep(3)  # To make sure the Thymio has had time to connect
 
     """
-    stop(th)
     cam = Camera()
     cam.open_camera()
+    cam.test_camera()
     # cam.camera_tweak()
     while True:
         print(cam.record_project())
