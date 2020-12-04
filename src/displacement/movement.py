@@ -49,29 +49,48 @@ def stop(thymio: Thymio, verbose=False):
     thymio.set_var("motor.right.target", 0)
 
 
-def rotate_time(angle: float):
-    l_speed = -int(np.sign(angle))
-    r_speed = int(np.sign(angle))
-    turn_time = float(os.getenv("HALF_TURN_TIME")) * abs(angle) / 180.0  # speed of 100
-    return l_speed, r_speed, turn_time
+def rotate_time(angle: float, speed_ratio=1):
+    """
+    Computes the speed ratios and turn time for a certain angle.
+
+    param angle: angle in degrees
+    param speed_ratio: ratio to scale the speed
+
+    return: speed norms for left and right wheel, time constant for turning at 100 speed
+    """
+
+    left_dir = -speed_ratio * int(np.sign(angle))
+    right_dir = speed_ratio * int(np.sign(angle))
+    turn_time = float(os.getenv("HALF_TURN_TIME")) * abs(angle) / 180.0 / speed_ratio  # speed of 100
+    return left_dir, right_dir, turn_time
 
 
-def advance_time(distance: float, speed_ratio: int = 1):
-    l_speed = speed_ratio * int(np.sign(distance))
-    r_speed = speed_ratio * int(np.sign(distance))
+def advance_time(distance: float, speed_ratio=1):
+    """
+    Computes the speed ratios and time for a certain distance.
+
+    param distance: distance in centimeter
+    param speed_ratio: ratio to scale the speed
+
+    return: speed norms for left and right wheel, time constant for advancing at 100 speed
+    """
+    left_dir = speed_ratio * int(np.sign(distance))
+    right_dir = speed_ratio * int(np.sign(distance))
     distance_time = float(os.getenv("DISTANCE_TIME")) * abs(distance) / speed_ratio
-    return l_speed, r_speed, distance_time
+    return left_dir, right_dir, distance_time
 
 
 def rotate_thread(thymio: Thymio, angle: float, verbose: bool = False, function=stop, args=None, kwargs=None):
     """
-    Rotates of the desired angle
+    Rotates of the desired angle by using a timer on a parallel thread.
+
     :param function:    function to execute at the end of rotation, default stop
     :param args:        array of non-keyworded arguments of function
     :param kwargs:      set of keyworded arguments
     :param thymio:      the class to which the robot is referred to
     :param angle:       angle in radians by which we want to rotate, positive or negative
     :param verbose:     printing the speed in the terminal
+
     :return: timer to check if it is still alive or not
     """
     args_f = args if args is not None else [thymio]
@@ -93,7 +112,8 @@ def advance_thread(thymio: Thymio, distance: float, speed_ratio: int = 1, verbos
                    args=None,
                    kwargs=None):
     """
-    Moves straight of a desired distance
+    Moves straight of a desired distance by using a timer on a parallel thread.
+
     :param kwargs:      function to execute at the end of advancing, default stop
     :param args:        array of non-keyworded arguments of function
     :param function:    set of keyworded arguments
@@ -101,6 +121,7 @@ def advance_thread(thymio: Thymio, distance: float, speed_ratio: int = 1, verbos
     :param distance:    distance in cm by which we want to move, positive or negative
     :param speed_ratio:       the speed factor at which the robot goes
     :param verbose:     printing the speed in the terminal
+
     :return: timer to check if it is still alive or not
     """
     args_f = args if args is not None else [thymio]
@@ -120,15 +141,17 @@ def advance_thread(thymio: Thymio, distance: float, speed_ratio: int = 1, verbos
 
 def advance(thymio: Thymio, distance: float, speed_ratio: int = 1, verbose: bool = False):
     """
-    Moves straight of a desired distance
+    Moves straight of a desired distance without using a parallel thread
 
     :param thymio:      the class to which the robot is referred to
     :param distance:    distance in cm by which we want to move, positive or negative
     :param speed_ratio:       the speed factor at which the robot goes
     :param verbose:     printing the speed in the terminal
+
     :return: timer to check if it is still alive or not
     """
     left_dir, right_dir, distance_time = advance_time(distance, speed_ratio)
+
     # Printing the speeds if requested
     if verbose:
         # print("\t\t Advance speed & time : ", l_speed, r_speed, distance_time)
@@ -141,15 +164,17 @@ def advance(thymio: Thymio, distance: float, speed_ratio: int = 1, verbose: bool
 
 def rotate(thymio: Thymio, angle: float, verbose: bool = False):
     """
-    Rotates of the desired angle
+    Rotates of the desired angle without using a parallel thread
 
     :param thymio:      the class to which the robot is referred to
     :param angle:       angle in radians by which we want to rotate, positive or negative
     :param verbose:     printing the speed in the terminal
+
     :return: timer to check if it is still alive or not
     """
 
     left_dir, right_dir, turn_time = rotate_time(angle)
+
     # Printing the speeds if requested
     if verbose:
         # print("\t\t Rotate speed & time : ", l_speed, r_speed, turn_time)

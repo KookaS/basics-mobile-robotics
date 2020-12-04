@@ -141,7 +141,7 @@ class Localization:
 
     def display_global_path(self, start, goal, path, occupancy_grid):
         # Displaying the map
-        prinnt("start", start)
+        print("start", start)
         fig_astar, ax_astar = display_map(occupancy_grid, self.OCCUPANCY)
         # ax_astar.imshow(occupancy_grid.transpose(), cmap=cmap)
 

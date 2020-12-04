@@ -13,10 +13,25 @@ from src.thymio.Thymio import Thymio
 
 class EventHandler:
     """
+    This class manages all the different scenarios of the robot until it reaches the goal.
     """
 
     def __init__(self, thymio: Thymio, interval_camera=3, interval_odometry=0.1, interval_sleep=0.05,
                  obstacle_threshold=4100, epsilon_theta=8, epsilon_r=1.25):
+        """
+        Constructor of the class EventHandler.
+
+        param thymio: class thymio, reference to the robot
+        param interval_camera: time constant necessary to access to kalman odometry and measurement
+        param interval_odometry: time constant necessary to access to kalman odometry
+        param interval_sleep: time sleep constant before function loop calls
+        param obstacle_threshold: condition to go into local avoidance
+        param epsilion_theta: the tolerated angle deviation
+        param epsilon_r: the tolerated distance deviation
+
+
+        :return:
+        """
         self.thymio: Thymio = thymio
         self.interval_camera = interval_camera
         self.interval_odometry = interval_odometry
@@ -42,20 +57,23 @@ class EventHandler:
 
     def __global_handler(self):
         """
-        Manages the thread for the GLOBAL scenario.
-        This function is called on it's own thread every interval_odometry seconds.
+        Function called in loop until the goal is reached. Kalman, global displacement, local avoidance happens here.
         """
         """
+        # odometry and measurement kalman
         if time.time() - self.camera_timer >= self.interval_camera:
             self.kalman_position = self.kalman_handler.get_camera()
             # self.kalman_position = self.kalman_handler.get_kalman(True)
             self.camera_timer = time.time()
         """
+
+        # odometry kalman
         if time.time() - self.odometry_timer >= self.interval_odometry:
             self.kalman_position = self.kalman_handler.get_camera()
             # self.kalman_position = self.kalman_handler.get_kalman(False)  # TODO
             self.odometry_timer = time.time()
 
+        # get orientation and displacement needed to reach next point of the path
         delta_r, delta_theta = update_path(self.path, self.kalman_position[0], self.kalman_position[1],
                                            self.kalman_position[2],
                                            self.case_size_cm)
@@ -96,14 +114,18 @@ class EventHandler:
                 self.camera_timer = time.time()
                 self.odometry_timer = time.time()
         else:
+            # point in the path has been reached
             print("done advancing!")
             stop(self.thymio)
             # time.sleep(2)
             self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
 
+        # if there still exist a path, iterates once more
         if len(self.path[0]):
             time.sleep(self.interval_sleep)
             self.__global_handler()
+
+        # no more path, go back to main
         else:
             self.kalman_handler.stop_recording()
             self.kalman_handler.camera.close_camera()
@@ -111,8 +133,7 @@ class EventHandler:
 
     def __local_handler(self):
         """
-        Manages the thread for the LOCAL scenario.
-        This function is called on it's own thread every interval_odometry seconds.
+        Local avoidance handler that updates the path after done avoiding.
         """
         print("inside __local_handler")
         obstacle = ObstacleAvoidance(self.thymio, self.kalman_handler, self.full_path, self.final_occupancy_grid,
