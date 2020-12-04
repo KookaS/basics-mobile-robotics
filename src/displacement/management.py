@@ -17,7 +17,7 @@ class EventHandler:
     """
 
     def __init__(self, thymio: Thymio, interval_camera=3, interval_odometry=0.1, interval_sleep=0.05,
-                 obstacle_threshold=2000, epsilon_theta=8, epsilon_r=1.25):
+                 obstacle_threshold=4100, epsilon_theta=8, epsilon_r=1.25):
         """
         Constructor of the class EventHandler.
 
@@ -82,9 +82,17 @@ class EventHandler:
 
         # Apply rotation
         if abs(delta_theta) > self.epsilon_theta:
+            if abs(delta_r) < self.epsilon_r:
+                print("Arrived to goal (from rotating)")
+                stop(self.thymio)
+                # time.sleep(2)
+                self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
             left_dir, right_dir, turn_time = rotate_time(delta_theta)
             left_dir = left_dir * 0.5
             right_dir = right_dir * 0.5
+            if abs(delta_theta) < 20:  # turn less quickly near epsilon_theta
+                left_dir = left_dir * 0.5
+                right_dir = right_dir * 0.5
             move(self.thymio, left_dir, right_dir)
 
         # Apply displacement
@@ -101,9 +109,7 @@ class EventHandler:
                 print("INSIDE LOCAL AVOIDANCE!")
                 stop(self.thymio)
                 self.kalman_handler.stop_recording()
-                self.kalman_handler.camera.close_camera()
                 self.__local_handler()
-                self.kalman_handler.camera.open_camera()
                 self.kalman_handler.start_recording()
                 self.camera_timer = time.time()
                 self.odometry_timer = time.time()
@@ -111,7 +117,7 @@ class EventHandler:
             # point in the path has been reached
             print("done advancing!")
             stop(self.thymio)
-            time.sleep(20)
+            # time.sleep(2)
             self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
 
         # if there still exist a path, iterates once more
@@ -130,7 +136,9 @@ class EventHandler:
         Local avoidance handler that updates the path after done avoiding.
         """
         print("inside __local_handler")
-        obstacle = ObstacleAvoidance(self.thymio, self.full_path, self.final_occupancy_grid, self.kalman_position)
+        obstacle = ObstacleAvoidance(self.thymio, self.kalman_handler, self.full_path, self.final_occupancy_grid,
+                                     self.kalman_position)
         self.full_path = obstacle.full_path
+        print("End Local, new full_path", self.full_path)
         self.path = full_path_to_points(self.full_path)  # concatenated path
         self.kalman_position = obstacle.kalman_position
