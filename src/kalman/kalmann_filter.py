@@ -16,7 +16,7 @@ class Kalman:
     Kalman class that calculates the estimation of the position based on odometry and/or measurements.
     """
 
-    def __init__(self, qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=1.3400e-04, k_delta_sl=8.3466e-05):
+    def __init__(self, qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=1.3400e-02, k_delta_sl=8.3466e-03):
         """
         Constructor that initializes the class variables.
         recommended values: qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=1.3400e-04, k_delta_sl=8.3466e-05
@@ -121,7 +121,7 @@ class Kalman:
         return state_est: new a posteriori state estimation
         return cov_est: new a posteriori state covariance
         """
-        if z[0] == -1 or z[1] == -1:  # if no camera, just odometry
+        if z[0] < 0 or z[1] < 0:  # if no camera, just odometry
             measurement = False
 
         theta = state_est_prev[2]
@@ -286,7 +286,6 @@ class KalmanHandler:
                                                           delta_sl, measurement)
         # m & rad -> cm & degrees
         self.kalman_position = [temp[0] * 100, temp[1] * 100, (np.rad2deg(temp[2]) + 180.0) % 360.0 - 180.0]
-        print("kalman position", self.kalman_position)
         return self.kalman_position
 
     def __camera_handler(self):

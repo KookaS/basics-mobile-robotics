@@ -56,9 +56,12 @@ class Camera:
         # detect the blue square and resize the frame
         image = self.detect_and_rotate(frame)
 
+        if image is None:
+            return [-100, -100, 0]
+
         fW, fH, _ = image.shape
         # print("fw,fh", fW, fH)
-        # print("fw,fh", fW,fH)
+        # print("fw,fh", fW, fH)
         # detect both yellow and green square for further angle and center computation
         x2g, y2g, xfg, yfg, frameg = self.frame_analysis_green(fW, fH, image)
         x2y, y2y, xfy, yfy, framey = self.frame_analysis_yellow(fW, fH, image)
@@ -121,7 +124,7 @@ class Camera:
         # return [x2 - 2.5, y2 - 2.5, angle]
         xc = xc - 2.5
         yc = yc - 2.5
-        yc = self.LENGTH - yc
+        yc = 72.5 - yc
         return [xc, yc, angle]
 
     def frame_analysis_green(self, fW, fH, frame):
@@ -250,14 +253,12 @@ class Camera:
         best = None
         for contour in contours:
             area = cv2.contourArea(contour)
-            """        
-            if len(area) < 1:
-            return np.array(image)
-            """
+
             if area > maxArea:
                 maxArea = area
                 best = contour
-
+        if maxArea < 10:
+            return None
         rect = cv2.minAreaRect(best)
         box = cv2.boxPoints(rect)
         box = np.int0(box)
@@ -376,6 +377,7 @@ class Camera:
                     # cv2.circle(frame,(x2,y2),4,(255,255,0),-1)
                     x2 = int((x2g + x2y) / 2)
                     y2 = int((y2g + y2y) / 2)
+                    # print("x2,y2", x2, y2)
                     text = "Robot center in map's squares"
                     cv2.putText(frame, text, (x2 - 120, y2 - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)

@@ -101,8 +101,8 @@ def path_to_command_thymio(path):
     next_y = path[1][1]
 
     # next-prev
-    delta_x = path[0][1] - path[0][0]
-    delta_y = path[1][1] - path[1][0]
+    delta_x = next_x - current_x
+    delta_y = next_y - current_y
 
     # delat_x = 0 and delta_y = -/+ 1 (or delat_x = -/+ 1 and delta_y = 0): go straight
     turn = STRAIGHT
