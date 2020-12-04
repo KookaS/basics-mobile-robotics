@@ -15,10 +15,10 @@ class Kalman:
     Kalman class that calculates the estimation of the position based on odometry and/or measurements.
     """
 
-    def __init__(self, qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=1.3400e-02, k_delta_sl=8.3466e-03):
+    def __init__(self, qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=2.00e-02, k_delta_sl=1.0e-02):
         """
         Constructor that initializes the class variables.
-        recommended values: qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=1.3400e-04, k_delta_sl=8.3466e-05
+        recommended values: qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=1.3400e-02, k_delta_sl=8.3466e-03
 
         param qx: variance on the x axis
         param qy: variance on the y axis
@@ -28,7 +28,7 @@ class Kalman:
         """
         self.Ts = 0.1
         self.state_est = [np.array([[0], [0], [0]])]
-        self.cov_est = [0.01 * np.ones([3, 3])]
+        self.cov_est = [0.01 * np.ones([3, 3])]  # default, do not tune here
         self.b = 0.095
         self.H = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         self.stripe_width = 50
@@ -206,7 +206,7 @@ class KalmanHandler:
         self.kalman_time = 0
         self.thymio_speed_to_mm_s = float(os.getenv("SPEED_80_TO_MM_S"))
         self.camera = camera
-        self.covariance = 1 * np.ones([3, 3])
+        self.covariance = 1.0e-04 * np.ones([3, 3])
         self.kalman_position = [0, 0, 0]
         self.camera_position = [-1, -1, 0]
 
