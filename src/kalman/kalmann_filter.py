@@ -1,6 +1,5 @@
 import cmath
 import os
-import pickle
 import threading
 import time
 
@@ -8,8 +7,6 @@ import numpy as np
 import math
 
 import matplotlib.pyplot as plt
-from docutils.utils.math.math2html import file
-
 from src.displacement.movement import stop
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
@@ -46,9 +43,9 @@ class Kalman:
         self.R = np.array([[self.k_delta_sr, 0], [0, self.k_delta_sl]])
         plt.ion()
         self.fig, self.ax = plt.subplots()
-        self.ellips = []
-        plt.axis([0, 0.725, 0, 0.8])
         plt.show()
+        self.cov_all = []
+        self.pos_all = []
 
     def tune_values(self, qx, qy, qt, k_delta_sr, k_delta_sl):
         """
@@ -87,37 +84,43 @@ class Kalman:
               1 / 2 * np.sin(theta + delta_theta / 2) - delta_s / (2 * self.b) * np.cos(theta + delta_theta / 2)],
              [1 / self.b, -1 / self.b]])
 
-    def plot(self, state_pred, cov_pred, fig, ax):
+    def plot(self):
+        state_pred = self.pos_all
+        cov_pred = self.cov_all
 
-        px, py = self.plot_covariance_ellipse(state_pred, cov_pred / 1000)
-        line_v = ax.axvline(x=state_pred[0], color="k")
-        line_h = ax.axhline(y=state_pred[1], color="k")
+        plt.ion()
+        fig, ax = plt.subplots()
+
+        px, py = self.plot_covariance_ellipse(state_pred[0], cov_pred[0] / 1000)
+        line_v = ax.axvline(x=state_pred[0][0], color="k")
+        line_h = ax.axhline(y=state_pred[0][1], color="k")
         ellips, = ax.plot(px, py, "--r", label="covariance matrix")
-        self.ellips.append((py, py))
 
-        for e in self.ellips:
-            print(e[0], e[1])
-            ellips.set_xdata(e[0])
-            ellips.set_ydata(e[1])
+        max_l = len(state_pred)
+        l = [i for i in range(max_l)]
+        l.insert(0, -1)
+        for i in l:
+            px, py = self.plot_covariance_ellipse(state_pred[i], cov_pred[i] / 1000)
 
-        line_v.set_xdata(state_pred[0])
-        line_h.set_ydata(state_pred[1])
+            line_v.set_xdata(state_pred[i][0])
+            line_h.set_ydata(state_pred[i][1])
 
-        ax.relim()
-        ax.autoscale_view()
+            ellips.set_xdata(px)
+            ellips.set_ydata(py)
+            ax.relim()
+            ax.autoscale_view()
 
-        fig.canvas.draw()
+            fig.canvas.draw()
 
-        fig.canvas.flush_events()
-        # plt.axis([0, 0.725, 0, 0.8])
-        # plt.show()
-        return fig, ax
+            fig.canvas.flush_events()
+            # plt.axis([0, 0.725, 0, 0.8])
+            plt.show()
+
+            time.sleep(4)
 
     def plot_covariance_ellipse(self, state_est, cov_est):
-        """
-        TODO
-        """
-        Pxy = np.array([[cov_est[0][0], cov_est[0][1]], [cov_est[1][0], cov_est[1][1]]])
+
+        Pxy = cov_est[0:2, 0:2]
         eigval, eigvec = np.linalg.eig(Pxy)
 
         if eigval[0] >= eigval[1]:
@@ -128,20 +131,19 @@ class Kalman:
             smallind = 0
 
         t = np.arange(0, 2 * math.pi + 0.1, 0.1)
-        a = cmath.sqrt(eigval[bigind])
-        b = cmath.sqrt(eigval[smallind])
+        a = math.sqrt(eigval[bigind])
+        b = math.sqrt(eigval[smallind])
         x = [a * math.cos(it) for it in t]
         y = [b * math.sin(it) for it in t]
 
-        angle = math.atan2(eigvec[bigind, 1].real, eigvec[bigind, 0].real)
-        self.R = np.array([[math.cos(angle), math.sin(angle)],
-                           [-math.sin(angle), math.cos(angle)]])
-        fx = self.R.dot(np.array([[x, y]]))
-        px = np.array(fx[0, :] + state_est[0]).flatten()
-        py = np.array(fx[1, :] + state_est[1]).flatten()
-        print(px)
+        angle = math.atan2(eigvec[bigind, 1], eigvec[bigind, 0])
+        R = np.array([[math.cos(angle), math.sin(angle)],
+                      [-math.sin(angle), math.cos(angle)]])
+        fx = R.dot(np.array([[x, y]]))
+        px = np.array(fx[0, :] + state_est[0, 0]).flatten()
+        py = np.array(fx[1, :] + state_est[1, 0]).flatten()
 
-        return math.sqrt(px[-1].real ** 2 + px[-1].imag ** 2), math.sqrt(py[-1].real ** 2 + py[-1].imag ** 2)
+        return px, py
 
     def kalman_filter(self, z, state_est_prev, cov_est_prev, delta_sr, delta_sl, measurement):
         """
@@ -188,7 +190,6 @@ class Kalman:
         print("state_est_a_priori", state_est_a_priori)
         """
 
-
         if measurement:  # odometry et measurements
             # Update step
             # innovation / measurement residual
@@ -211,7 +212,8 @@ class Kalman:
             state_est = state_est_a_priori
             cov_est = cov_est_a_priori
 
-        self.fig, self.ax = self.plot(state_est, cov_est, self.fig, self.ax)
+        self.cov_all.append(cov_est)
+        self.pos_all.append(state_est)
         return state_est.flatten().tolist(), cov_est
 
 

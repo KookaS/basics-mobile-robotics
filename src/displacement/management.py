@@ -140,6 +140,11 @@ class EventHandler:
             # self.kalman_handler.stop_recording()
             self.camera.close_camera()
             stop(self.thymio)
+            # self.kalman_handler.kalman.plot()
+            print("cov all!!!")
+            print(self.kalman_handler.kalman.cov_all.tolist())
+            print("pos all!!!")
+            print(self.kalman_handler.kalman.pos_all.tolist())
 
     def __local_handler(self):
         """
