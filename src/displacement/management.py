@@ -23,7 +23,7 @@ class EventHandler:
     """
 
     def __init__(self, thymio: Thymio, interval_camera=1, interval_odometry=0.1, interval_sleep=0.08,
-                 obstacle_threshold=4100, epsilon_theta=8, epsilon_r=1.25):
+                 obstacle_threshold=4100, epsilon_theta=20, epsilon_r=2):
         """
         Constructor of the class EventHandler.
 
@@ -44,9 +44,9 @@ class EventHandler:
         self.interval_sleep = interval_sleep
         self.obstacle_threshold = obstacle_threshold
         self.case_size_cm = 2.5  # [cm]
-        self.final_occupancy_grid, self.goal = Localization().localize()
         self.camera = Camera()
         self.camera.open_camera()
+        self.final_occupancy_grid, self.goal = Localization(self.camera).localize()
         self.kalman_handler = KalmanHandler(self.thymio, self.camera)
         self.kalman_position = self.kalman_handler.get_camera()
         self.epsilon_theta = epsilon_theta  # [degrees]
@@ -149,6 +149,10 @@ class EventHandler:
         obstacle = ObstacleAvoidance(self.thymio, self.kalman_handler, self.full_path, self.final_occupancy_grid,
                                      self.kalman_position)
         self.full_path = obstacle.full_path
+        if not len(self.full_path[0]):
+            self.full_path = np.array([[self.goal[0]], [self.goal[1]]])
+            print("added goal to the path!", self.full_path)
+        print("if goal delete", np.array([[self.goal[0]], [self.goal[1]]]))
         print("End Local, new full_path", self.full_path)
         self.path = full_path_to_points(self.full_path)  # concatenated path
         self.kalman_position = obstacle.kalman_position

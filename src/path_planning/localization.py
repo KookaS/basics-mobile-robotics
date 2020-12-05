@@ -10,39 +10,15 @@ from src.vision.camera import Colors, Camera
 LENGTH = 32
 WIDTH = 29
 
-
-def test_ground_white(thymio: Thymio, white_threshold: int, verbose: bool = False):
-    """
-    Tests whether the two ground sensors have seen white
-
-    :param thymio:          The file location of the spreadsheet
-    :param white_threshold: threshold starting which it is considered that the ground sensor saw white
-    :param verbose:         whether to print status messages or not
-    """
-    if all([x > white_threshold for x in thymio['prox.ground.reflected']]):
-        if verbose:
-            print("\t\t Saw white on the ground")
-        return True
-    return False
-
-
-def test_saw_black(thymio: Thymio, white_threshold: int, verbose: bool = True):
-    """
-    Line following behaviour of the FSM
-
-    :param thymio:          The file location of the spreadsheet
-    :param white_threshold: threshold starting which it is considered that the ground sensor saw white
-    :param verbose:         whether to print status messages or not
-    """
-
-    if any([x <= white_threshold for x in thymio['prox.ground.reflected']]):
-        if verbose:
-            print("\t\t Both ground sensors saw black")
-        return True
-    return False
-
-
 def resize(final_grid, alpha, beta):
+    """
+    Resize to the desired grid size the camera picture
+    :param final_grid:      The picture to resize
+    :param alpha:           Sharpen's contrast control to resize the grid
+    :param beta:            Sharpen's brightness control to resize the grid
+    """
+
+    # init the filter before actual resize
     adjusted = cv2.convertScaleAbs(final_grid, alpha, beta)
     sharpen_kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
     sharpen = cv2.filter2D(final_grid, -1, sharpen_kernel)
@@ -56,7 +32,7 @@ def resize(final_grid, alpha, beta):
 
 class Localization:
 
-    def __init__(self):
+    def __init__(self, camera):
         # init value for value setting
         self.color_threshold = 150
         self.zero_init = 0
@@ -65,6 +41,7 @@ class Localization:
         self.goal, self.thymio = (0, 1)
         self.x, self.y = (0, 1)
         self.colors = Colors()
+        self.camera = camera
 
         # constants
         self.LOCALIZATION = 0
@@ -80,8 +57,11 @@ class Localization:
         self.beta = 0  # Brightness control (0-100)
 
     def rotate(self, vis_map):
-        low_green = np.array([36, 0, 0])
-        up_green = np.array([86, 255, 255])
+        """
+        Rotate the map in order to put it in the right orientation
+        :param vis_map:     picture to rotate
+        """
+
         # computing of the green mask to find the correct orientation of the map
         hsv = cv2.cvtColor(vis_map, cv2.COLOR_BGR2HSV)
         mask_green = cv2.inRange(hsv, self.colors.low_green, self.colors.up_green)
@@ -106,11 +86,12 @@ class Localization:
         return world
 
     def detect_object(self, world):
+        """
+        Fonction to detect the global obstacles and the goal
+        :param world:       global map of the world from the camera after resize and rotation
+        """
 
-        # create the map with only the obstucale to non-zero
-        plt.figure()
-        plt.imshow(world)
-        plt.show()
+        # create the mask to see the obstacle
         world_hsv = cv2.cvtColor(world, cv2.COLOR_BGR2HSV)
         mask_red = cv2.inRange(world_hsv, self.colors.low_red, self.colors.up_red)
         occupancy_grid = np.array(mask_red)
@@ -118,12 +99,13 @@ class Localization:
         plt.imshow(occupancy_grid)
         plt.show()
         world_rows, world_cols, _ = world.shape
-        # obstacle_grid = [[[self.zero_init, self.zero_init, self.zero_init] for r in range(world_cols)] for c in
-        #                 range(world_rows)]
 
+        #  create the mask in order to find the goal
         world_hsv = cv2.cvtColor(world, cv2.COLOR_BGR2HSV)
         mask_goal = cv2.inRange(world_hsv, self.colors.low_blue, self.colors.up_blue)
-
+        plt.figure()
+        plt.imshow(mask_goal)
+        plt.show()
         goal_x, goal_y = (15, 15)  # goal by default
 
         # look for the obstacle and increase there size
@@ -136,6 +118,11 @@ class Localization:
         return object_grid, occupancy_grid
 
     def vision(self, image):
+        """
+        Main function handling the pictures capture and preparation before analysis
+        :param image:       Picture took with the webcam
+        """
+
         final_grid = Camera().detect_and_rotate(image)
         vis_map = resize(final_grid, self.alpha, self.beta)
         world = self.rotate(vis_map)
@@ -147,8 +134,14 @@ class Localization:
         return object_grid, occupancy_grid, world
 
     def display_global_path(self, start, goal, path, occupancy_grid):
+        """
+        Function to plot the global path
+        :param start:           Thymio position at the beginning
+        :param goal:            Goal position
+        :param path:            Optimal path computed with the A* algorithm
+        :param occupancy_grid:  Grid with all the global obstacles
+        """
         # Displaying the map
-        print("start", start)
         fig_astar, ax_astar = display_map(occupancy_grid, self.OCCUPANCY)
         # ax_astar.imshow(occupancy_grid.transpose(), cmap=cmap)
 
@@ -159,7 +152,13 @@ class Localization:
         ax_astar.set_ylim(ax_astar.get_ylim()[::-1])
 
     def increased_obstacles_map(self, occupancy_grid):
+        """
+        Increase the obstalce size in order to compute A* algorithm without being concern by the thymio size.
+                                our case, we increase by 3 square.
+        :param occupancy_grid:  Grid with all the global obstacles
+        """
         nb_rows, nb_cols = occupancy_grid.shape
+        #  increase the total map size by 3
         increased_occupancy_grid = np.zeros([nb_rows + 6, nb_cols + 6])
         for i in range(nb_rows):
             for j in range(nb_cols):
@@ -167,20 +166,25 @@ class Localization:
                 if occupancy_grid[i, j] == self.OCCUPIED:
                     increased_occupancy_grid[i:i + 7, j:j + 7] = np.ones([7, 7])
 
+        #  Return the reduce to intial size but with increase obstacles map
         final_occupancy_grid = increased_occupancy_grid[3:LENGTH + 3, 3:WIDTH + 3]
         return final_occupancy_grid
 
     def localize(self):
-        # open image images/mapf.png
-        cap = cv2.VideoCapture(int(os.getenv("CAMERA_PORT")))
-        _, frame = cap.read()
+        """
+        Main function handling the image analysis and thymio localisation with the camer
+        """
+        # open the video and saves the first image
+        _, image = self.camera.cap.read()
 
+        """
         cv2.imwrite('C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/init.jpg',
                     frame)
-        cap.release()
         image = cv2.imread(
             'C:/Users/Olivier/Documents/EPFL 2020-2021/Basics of mobile robotics/Project/images/init.jpg')
+        """
 
+        #  Call the vision function in order to have the grid with the obstacle and the goal coordinate
         object_grid, occupancy_grid, world = self.vision(image)
 
         # change to the right coordinate format
@@ -189,7 +193,6 @@ class Localization:
 
         display_map(final_occupancy_grid.transpose(), 1)
 
-        # print("object_grid", object_grid)
         #  goal coordinate
         goal_x = object_grid[self.goal][self.y]
         goal_y = WIDTH - object_grid[self.goal][self.x] - 1
