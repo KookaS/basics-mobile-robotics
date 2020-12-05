@@ -5,6 +5,7 @@ import time
 import numpy as np
 import math
 
+from src.Affichage.affichage import plot
 from src.displacement.movement import stop
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
@@ -174,6 +175,7 @@ class Kalman:
             state_est = state_est_a_priori
             cov_est = cov_est_a_priori
 
+        plot(state_est, cov_est)
         return state_est.flatten().tolist(), cov_est
 
 
