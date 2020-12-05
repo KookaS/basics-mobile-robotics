@@ -143,10 +143,12 @@ class EventHandler:
             # self.kalman_handler.kalman.plot()
             with open('cov_all.txt', 'w') as f:
                 for item in self.kalman_handler.kalman.cov_all:
-                    f.write("%s\n" % item)
+                    f.write("%s" % item)
+            f.close()
             with open('pos_all.txt', 'w') as f:
                 for item in self.kalman_handler.kalman.pos_all:
-                    f.write("%s\n" % item)
+                    f.write("%s" % item)
+            f.close()
 
     def __local_handler(self):
         """

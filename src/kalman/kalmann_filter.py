@@ -350,8 +350,8 @@ class KalmanHandler:
         temp, self.covariance = self.kalman.kalman_filter(conv_cam, conv_pos, self.covariance, delta_sr,
                                                           delta_sl, measurement)
         # m & rad -> cm & degrees
-        self.kalman.cov_all.append(temp.tolist())
-        self.kalman.pos_all.append(self.covariance.tolist())
+        self.kalman.cov_all.append(temp)
+        self.kalman.pos_all.append(self.covariance)
         self.kalman_position = [temp[0] * 100, temp[1] * 100, (np.rad2deg(temp[2]) + 180.0) % 360.0 - 180.0]
         return self.kalman_position
 
