@@ -211,9 +211,6 @@ class Kalman:
         else:  # odometry
             state_est = state_est_a_priori
             cov_est = cov_est_a_priori
-
-        self.cov_all.append(cov_est)
-        self.pos_all.append(state_est)
         return state_est.flatten().tolist(), cov_est
 
 
@@ -353,6 +350,8 @@ class KalmanHandler:
         temp, self.covariance = self.kalman.kalman_filter(conv_cam, conv_pos, self.covariance, delta_sr,
                                                           delta_sl, measurement)
         # m & rad -> cm & degrees
+        self.kalman.cov_all.append(temp.tolist())
+        self.kalman.pos_all.append(self.covariance.tolist())
         self.kalman_position = [temp[0] * 100, temp[1] * 100, (np.rad2deg(temp[2]) + 180.0) % 360.0 - 180.0]
         return self.kalman_position
 

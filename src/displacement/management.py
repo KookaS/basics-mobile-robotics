@@ -141,10 +141,12 @@ class EventHandler:
             self.camera.close_camera()
             stop(self.thymio)
             # self.kalman_handler.kalman.plot()
-            print("cov all!!!")
-            print(self.kalman_handler.kalman.cov_all.tolist())
-            print("pos all!!!")
-            print(self.kalman_handler.kalman.pos_all.tolist())
+            with open('cov_all.txt', 'w') as f:
+                for item in self.kalman_handler.kalman.cov_all:
+                    f.write("%s\n" % item)
+            with open('pos_all.txt', 'w') as f:
+                for item in self.kalman_handler.kalman.pos_all:
+                    f.write("%s\n" % item)
 
     def __local_handler(self):
         """

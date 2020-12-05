@@ -124,6 +124,7 @@ Create a .env and make sure not to commit and push it
 
 This is a way to store locally variables that can be used in the project, variables that may be different for everyone
 
+    COM_PORT=\\.\COM10
     LEFT_WHEEL_SCALING=98
     RIGHT_WHEEL_SCALING=100
     HALF_TURN_TIME=4.72
