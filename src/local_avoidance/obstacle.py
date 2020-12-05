@@ -62,6 +62,7 @@ class ObstacleAvoidance:
 
         # variables
         self.kalman_position = self.kalman_handler.get_camera()
+        self.kalman_handler.start_timer()
         self.kalman_position = [self.kalman_position[0] / self.SQUARE, self.kalman_position[1] / self.SQUARE,
                                 self.kalman_position[2]]
 
@@ -369,9 +370,11 @@ class ObstacleAvoidance:
             print("\t\t Advance of cm: ", distance)
 
         move(thymio, left_dir, right_dir)
-        time.sleep(distance_time)
-        stop(thymio)  # TODO remove if kalmann
-        self.kalman_position = self.kalman_handler.get_camera()
+        now = time.time()
+        while time.time() - now < distance_time:
+            self.kalman_position = self.kalman_handler.get_kalman(False)
+
+        self.kalman_position = self.kalman_handler.get_kalman(True)
         self.kalman_position = [self.kalman_position[0] / self.SQUARE, self.kalman_position[1] / self.SQUARE,
                                 self.kalman_position[2]]
 
@@ -391,9 +394,11 @@ class ObstacleAvoidance:
 
         ratio = 2
         move(thymio, left_dir / ratio, right_dir / ratio)
-        time.sleep(turn_time * ratio)
-        stop(thymio)  # TODO if kalmann
-        self.kalman_position = self.kalman_handler.get_camera()
+        now = time.time()
+        while time.time() - now < turn_time * 2:
+            self.kalman_position = self.kalman_handler.get_kalman(False)
+
+        self.kalman_position = self.kalman_handler.get_kalman(True)
         self.kalman_position = [self.kalman_position[0] / self.SQUARE, self.kalman_position[1] / self.SQUARE,
                                 self.kalman_position[2]]
 

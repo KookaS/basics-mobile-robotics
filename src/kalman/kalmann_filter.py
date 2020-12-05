@@ -1,3 +1,4 @@
+import cmath
 import os
 import threading
 import time
@@ -5,11 +6,10 @@ import time
 import numpy as np
 import math
 
-from src.Affichage.affichage import plot
+import matplotlib.pyplot as plt
 from src.displacement.movement import stop
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
-from src.vision.camera import Camera
 
 
 class Kalman:
@@ -17,10 +17,10 @@ class Kalman:
     Kalman class that calculates the estimation of the position based on odometry and/or measurements.
     """
 
-    def __init__(self, qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=1.3400e-04, k_delta_sl=8.3466e-05):
+    def __init__(self, qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=2.50e-02, k_delta_sl=1.5e-02):
         """
         Constructor that initializes the class variables.
-        recommended values: qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=1.3400e-04, k_delta_sl=8.3466e-05
+        recommended values: qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=1.3400e-02, k_delta_sl=8.3466e-03
 
         param qx: variance on the x axis
         param qy: variance on the y axis
@@ -30,7 +30,7 @@ class Kalman:
         """
         self.Ts = 0.1
         self.state_est = [np.array([[0], [0], [0]])]
-        self.cov_est = [0.01 * np.ones([3, 3])]
+        self.cov_est = [0.01 * np.ones([3, 3])]  # default, do not tune here
         self.b = 0.095
         self.H = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         self.stripe_width = 50
@@ -41,6 +41,11 @@ class Kalman:
         self.k_delta_sl = k_delta_sl
         self.Q = np.array([[self.qx, 0, 0], [0, self.qy, 0], [0, 0, self.qt]])
         self.R = np.array([[self.k_delta_sr, 0], [0, self.k_delta_sl]])
+        plt.ion()
+        self.fig, self.ax = plt.subplots()
+        plt.show()
+        self.cov_all = []
+        self.pos_all = []
 
     def tune_values(self, qx, qy, qt, k_delta_sr, k_delta_sl):
         """
@@ -79,10 +84,42 @@ class Kalman:
               1 / 2 * np.sin(theta + delta_theta / 2) - delta_s / (2 * self.b) * np.cos(theta + delta_theta / 2)],
              [1 / self.b, -1 / self.b]])
 
+    def plot(self):
+        state_pred = self.pos_all
+        cov_pred = self.cov_all
+
+        plt.ion()
+        fig, ax = plt.subplots()
+
+        px, py = self.plot_covariance_ellipse(state_pred[0], cov_pred[0] / 1000)
+        line_v = ax.axvline(x=state_pred[0][0], color="k")
+        line_h = ax.axhline(y=state_pred[0][1], color="k")
+        ellips, = ax.plot(px, py, "--r", label="covariance matrix")
+
+        max_l = len(state_pred)
+        l = [i for i in range(max_l)]
+        l.insert(0, -1)
+        for i in l:
+            px, py = self.plot_covariance_ellipse(state_pred[i], cov_pred[i] / 1000)
+
+            line_v.set_xdata(state_pred[i][0])
+            line_h.set_ydata(state_pred[i][1])
+
+            ellips.set_xdata(px)
+            ellips.set_ydata(py)
+            ax.relim()
+            ax.autoscale_view()
+
+            fig.canvas.draw()
+
+            fig.canvas.flush_events()
+            # plt.axis([0, 0.725, 0, 0.8])
+            plt.show()
+
+            time.sleep(4)
+
     def plot_covariance_ellipse(self, state_est, cov_est):
-        """
-        TODO
-        """
+
         Pxy = cov_est[0:2, 0:2]
         eigval, eigvec = np.linalg.eig(Pxy)
 
@@ -100,9 +137,9 @@ class Kalman:
         y = [b * math.sin(it) for it in t]
 
         angle = math.atan2(eigvec[bigind, 1], eigvec[bigind, 0])
-        self.R = np.array([[math.cos(angle), math.sin(angle)],
-                           [-math.sin(angle), math.cos(angle)]])
-        fx = self.R.dot(np.array([[x, y]]))
+        R = np.array([[math.cos(angle), math.sin(angle)],
+                      [-math.sin(angle), math.cos(angle)]])
+        fx = R.dot(np.array([[x, y]]))
         px = np.array(fx[0, :] + state_est[0, 0]).flatten()
         py = np.array(fx[1, :] + state_est[1, 0]).flatten()
 
@@ -122,7 +159,7 @@ class Kalman:
         return state_est: new a posteriori state estimation
         return cov_est: new a posteriori state covariance
         """
-        if z[0] == -1 or z[1] == -1:  # if no camera, just odometry
+        if z[0] < 0 or z[1] < 0:  # if no camera, just odometry
             measurement = False
 
         theta = state_est_prev[2]
@@ -151,7 +188,6 @@ class Kalman:
         print("Fx", Fx)
         print("Fu", Fu)
         print("state_est_a_priori", state_est_a_priori)
-        print("cov_est_a_priori", cov_est_a_priori)
         """
 
         if measurement:  # odometry et measurements
@@ -175,8 +211,6 @@ class Kalman:
         else:  # odometry
             state_est = state_est_a_priori
             cov_est = cov_est_a_priori
-
-        plot(state_est, cov_est)
         return state_est.flatten().tolist(), cov_est
 
 
@@ -185,12 +219,19 @@ class KalmanHandler:
     Kalman Handler class that wraps the code of the Kalman for the right execution. It includes the use of the sensors and the camera.
     """
 
-    def __init__(self, thymio: Thymio, interval_sleep=0.05):
+    def __init__(self, thymio: Thymio, camera, interval_sleep=0.05):
         """
         Constructor that initializes the camera, kalman, the sensors and class variables.
 
         param thymio: class of the robot
         param interval_sleep: time constant to sleep before function loop calls
+
+        Example:
+            if recording:
+                kalman_handler = KalmanHandler(...)
+                kalman_handler.start_recording()
+                ...
+                kalman_handler.stop_recording()
         """
         self.interval_sleep = interval_sleep
         self.thymio = thymio
@@ -201,25 +242,34 @@ class KalmanHandler:
         self.recording = False
         self.kalman_time = 0
         self.thymio_speed_to_mm_s = float(os.getenv("SPEED_80_TO_MM_S"))
-        self.camera = Camera()
-        self.covariance = 1 * np.ones([3, 3])
+        self.camera = camera
+        self.covariance = 1.0e-04 * np.ones([3, 3])
         self.kalman_position = [0, 0, 0]
         self.camera_position = [-1, -1, 0]
 
-    def __record_handler(self):
+    def __speeds(self):
         """
-        Manages the speed recording of the robot to get the average speed in kalman.
+        Returns the speed of the robot for left and right wheel.
+
+        :return: left and right speed
         """
         speed = self.sensor_handler.speed()
         r_speed = speed['right_speed']
         l_speed = speed['left_speed']
         l_speed = l_speed if l_speed <= 2 ** 15 else l_speed - 2 ** 16
         r_speed = r_speed if r_speed <= 2 ** 15 else r_speed - 2 ** 16
+        return l_speed, r_speed
+
+    def __record_handler(self):
+        """
+        Manages the speed recording of the robot to get the average speed in kalman.
+        """
+        l_speed, r_speed = self.__speeds()
         self.record_left.append(l_speed)
         self.record_right.append(r_speed)
 
         if self.recording:
-            time.sleep(self.interval_sleep / 5)
+            time.sleep(self.interval_sleep / 5)  # 5 recordings per kalman call
             self.__record_handler()
         else:
             self.__record_reset()
@@ -255,6 +305,12 @@ class KalmanHandler:
         print("STOP RECORDING")
         self.recording = False
 
+    def start_timer(self):
+        """
+        Start the timer for kalman
+        """
+        self.kalman_time = time.time()
+
     def get_kalman(self, measurement: bool):
         """
         Manages the kalman estimation based on the time and speed.
@@ -263,23 +319,30 @@ class KalmanHandler:
 
         return: [x, y, theta] converted back in cm and degrees
         """
-        # if the speeds recorded are empty, stop the kalman
-        if not len(self.record_left) and not len(self.record_right):
-            return self.kalman_position
 
-        speed_left = sum(self.record_left) / len(self.record_left)
-        speed_right = sum(self.record_right) / len(self.record_right)
+        # if recording then does the average speed
+        if self.recording:
+            # if the speeds recorded are empty, stop the kalman
+            if not len(self.record_left) and not len(self.record_right):
+                return self.kalman_position
+
+            speed_left = sum(self.record_left) / len(self.record_left)
+            speed_right = sum(self.record_right) / len(self.record_right)
+        # if not recording, takes the actual speed
+        else:
+            speed_left, speed_right = self.__speeds()
+
         ts = time.time() - self.kalman_time  # [s]
         delta_sl = speed_left * ts * self.thymio_speed_to_mm_s / 1000  # [m]
         delta_sr = speed_right * ts * self.thymio_speed_to_mm_s / 1000  # [m]
 
         if measurement:
-            stop(self.thymio)
+            # stop(self.thymio)
             self.__camera_handler()
 
         self.sensor_handler = SensorHandler(self.thymio)  # new class declaration to avoid calling too many times
         self.__record_reset()
-        self.kalman_time = time.time()
+        self.start_timer()
 
         # cm & degrees -> m & rad
         conv_pos = [self.kalman_position[0] / 100, self.kalman_position[1] / 100, np.deg2rad(self.kalman_position[2])]
@@ -287,9 +350,9 @@ class KalmanHandler:
         temp, self.covariance = self.kalman.kalman_filter(conv_cam, conv_pos, self.covariance, delta_sr,
                                                           delta_sl, measurement)
         # m & rad -> cm & degrees
+        self.kalman.cov_all.append(temp)
+        self.kalman.pos_all.append(self.covariance)
         self.kalman_position = [temp[0] * 100, temp[1] * 100, (np.rad2deg(temp[2]) + 180.0) % 360.0 - 180.0]
-        print("kalman position", self.kalman_position)
-
         return self.kalman_position
 
     def __camera_handler(self):
