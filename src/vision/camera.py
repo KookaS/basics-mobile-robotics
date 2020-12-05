@@ -244,7 +244,9 @@ class Camera:
         # hsv value for the various mask
         # computing of the blue mask to isolate the contours of the map
         mask_blue = cv2.inRange(hsv, self.colors.low_blue, self.colors.up_blue)
-
+        plt.figure()
+        plt.imshow(mask_blue)
+        plt.show()
         # find the outside blue contours of the map on the whole world
         contours, _ = cv2.findContours(mask_blue, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
 

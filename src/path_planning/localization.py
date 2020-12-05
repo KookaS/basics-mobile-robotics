@@ -192,9 +192,9 @@ class Localization:
         # print("object_grid", object_grid)
         #  goal coordinate
         goal_x = object_grid[self.goal][self.y]
-        goal_y = LENGTH - object_grid[self.goal][self.x]
+        goal_y = WIDTH - object_grid[self.goal][self.x] - 1
         goal = (goal_x, goal_y)
-
+        print(goal)
         # Run the A* algorithm
         # path = A_Star(start, goal, final_occupancy_grid)
         # path = np.array(path).reshape(-1, 2).transpose()
