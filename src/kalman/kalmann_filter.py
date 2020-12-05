@@ -268,6 +268,12 @@ class KalmanHandler:
         print("STOP RECORDING")
         self.recording = False
 
+    def start_timer(self):
+        """
+        Start the timer for kalman
+        """
+        self.kalman_time = time.time()
+
     def get_kalman(self, measurement: bool):
         """
         Manages the kalman estimation based on the time and speed.
@@ -295,12 +301,11 @@ class KalmanHandler:
 
         if measurement:
             stop(self.thymio)
-            print("kalman position", self.kalman_position)
             self.__camera_handler()
 
         self.sensor_handler = SensorHandler(self.thymio)  # new class declaration to avoid calling too many times
         self.__record_reset()
-        self.kalman_time = time.time()
+        self.start_timer()
 
         # cm & degrees -> m & rad
         conv_pos = [self.kalman_position[0] / 100, self.kalman_position[1] / 100, np.deg2rad(self.kalman_position[2])]

@@ -22,7 +22,7 @@ class EventHandler:
     This class manages all the different scenarios of the robot until it reaches the goal.
     """
 
-    def __init__(self, thymio: Thymio, interval_camera=1.6, interval_odometry=0.2, interval_sleep=0.08,
+    def __init__(self, thymio: Thymio, interval_camera=1, interval_odometry=0.1, interval_sleep=0.08,
                  obstacle_threshold=4100, epsilon_theta=8, epsilon_r=1.25):
         """
         Constructor of the class EventHandler.
@@ -55,6 +55,7 @@ class EventHandler:
                                                       (self.kalman_position[0], self.kalman_position[1]),
                                                       self.goal)
         # self.kalman_handler.start_recording()
+        self.kalman_handler.start_timer()
         self.camera_timer = time.time()
         self.odometry_timer = time.time()
         # self.state = STOP
@@ -69,8 +70,9 @@ class EventHandler:
         # odometry and measurement kalman
         if time.time() - self.camera_timer >= self.interval_camera:
             # self.kalman_position = self.kalman_handler.get_camera()
+            print("before kalman position", self.kalman_position)
             self.kalman_position = self.kalman_handler.get_kalman(True)
-            print("kalman position", self.kalman_position)
+            print("after kalman position", self.kalman_position)
             # self.kalman_handler.stop_recording()
             # self.kalman_handler = KalmanHandler(self.thymio, self.camera)
             # self.kalman_handler.start_recording()
