@@ -1,3 +1,4 @@
+import cmath
 import os
 import threading
 import time
@@ -5,7 +6,7 @@ import time
 import numpy as np
 import math
 
-from src.Affichage.affichage import plot
+import matplotlib.pyplot as plt
 from src.displacement.movement import stop
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
@@ -16,7 +17,7 @@ class Kalman:
     Kalman class that calculates the estimation of the position based on odometry and/or measurements.
     """
 
-    def __init__(self, qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=2.00e-02, k_delta_sl=1.0e-02):
+    def __init__(self, qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=2.50e-02, k_delta_sl=1.5e-02):
         """
         Constructor that initializes the class variables.
         recommended values: qx=2.8948e-04, qy=8.2668e-04, qt=2.9e-03, k_delta_sr=1.3400e-02, k_delta_sl=8.3466e-03
@@ -40,6 +41,11 @@ class Kalman:
         self.k_delta_sl = k_delta_sl
         self.Q = np.array([[self.qx, 0, 0], [0, self.qy, 0], [0, 0, self.qt]])
         self.R = np.array([[self.k_delta_sr, 0], [0, self.k_delta_sl]])
+        plt.ion()
+        self.fig, self.ax = plt.subplots()
+        plt.show()
+        self.cov_all = []
+        self.pos_all = []
 
     def tune_values(self, qx, qy, qt, k_delta_sr, k_delta_sl):
         """
@@ -78,10 +84,42 @@ class Kalman:
               1 / 2 * np.sin(theta + delta_theta / 2) - delta_s / (2 * self.b) * np.cos(theta + delta_theta / 2)],
              [1 / self.b, -1 / self.b]])
 
+    def plot(self):
+        state_pred = self.pos_all
+        cov_pred = self.cov_all
+
+        plt.ion()
+        fig, ax = plt.subplots()
+
+        px, py = self.plot_covariance_ellipse(state_pred[0], cov_pred[0] / 1000)
+        line_v = ax.axvline(x=state_pred[0][0], color="k")
+        line_h = ax.axhline(y=state_pred[0][1], color="k")
+        ellips, = ax.plot(px, py, "--r", label="covariance matrix")
+
+        max_l = len(state_pred)
+        l = [i for i in range(max_l)]
+        l.insert(0, -1)
+        for i in l:
+            px, py = self.plot_covariance_ellipse(state_pred[i], cov_pred[i] / 1000)
+
+            line_v.set_xdata(state_pred[i][0])
+            line_h.set_ydata(state_pred[i][1])
+
+            ellips.set_xdata(px)
+            ellips.set_ydata(py)
+            ax.relim()
+            ax.autoscale_view()
+
+            fig.canvas.draw()
+
+            fig.canvas.flush_events()
+            # plt.axis([0, 0.725, 0, 0.8])
+            plt.show()
+
+            time.sleep(4)
+
     def plot_covariance_ellipse(self, state_est, cov_est):
-        """
-        TODO
-        """
+
         Pxy = cov_est[0:2, 0:2]
         eigval, eigvec = np.linalg.eig(Pxy)
 
@@ -99,9 +137,9 @@ class Kalman:
         y = [b * math.sin(it) for it in t]
 
         angle = math.atan2(eigvec[bigind, 1], eigvec[bigind, 0])
-        self.R = np.array([[math.cos(angle), math.sin(angle)],
-                           [-math.sin(angle), math.cos(angle)]])
-        fx = self.R.dot(np.array([[x, y]]))
+        R = np.array([[math.cos(angle), math.sin(angle)],
+                      [-math.sin(angle), math.cos(angle)]])
+        fx = R.dot(np.array([[x, y]]))
         px = np.array(fx[0, :] + state_est[0, 0]).flatten()
         py = np.array(fx[1, :] + state_est[1, 0]).flatten()
 
@@ -150,7 +188,6 @@ class Kalman:
         print("Fx", Fx)
         print("Fu", Fu)
         print("state_est_a_priori", state_est_a_priori)
-        print("cov_est_a_priori", cov_est_a_priori)
         """
 
         if measurement:  # odometry et measurements
@@ -175,7 +212,8 @@ class Kalman:
             state_est = state_est_a_priori
             cov_est = cov_est_a_priori
 
-        plot(state_est, cov_est)
+        self.cov_all.append(cov_est)
+        self.pos_all.append(state_est)
         return state_est.flatten().tolist(), cov_est
 
 
@@ -302,7 +340,7 @@ class KalmanHandler:
         delta_sr = speed_right * ts * self.thymio_speed_to_mm_s / 1000  # [m]
 
         if measurement:
-            stop(self.thymio)
+            # stop(self.thymio)
             self.__camera_handler()
 
         self.sensor_handler = SensorHandler(self.thymio)  # new class declaration to avoid calling too many times

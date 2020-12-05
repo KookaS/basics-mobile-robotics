@@ -7,6 +7,7 @@ from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from src.displacement.movement import stop, advance_time, move, rotate_time
 
+
 class EventEnum(Enum):
     """
     This is a class based on enumeration to define constants in a clean way.
@@ -45,6 +46,7 @@ class ObstacleAvoidance:
         self.final_occupancy_grid = final_occupancy_grid
         self.kalman_handler = kalman_handler
         self.kalman_position = self.kalman_handler.get_camera()
+        self.kalman_handler.start_timer()
         # cm grid -> cube grid
         self.square = square
         self.kalman_position = [self.kalman_position[0] / self.square, self.kalman_position[1] / self.square,
@@ -180,7 +182,7 @@ class ObstacleAvoidance:
                     return obstacle, global_path
 
                 sensor_values = self.sensor_handler.sensor_raw()["sensor"]
-                while sensor_values[4] < 1000:
+                while sensor_values[4] < 2000:
                     sensor_values = self.sensor_handler.sensor_raw()["sensor"]
                     print("cas 7.2")
                     self.rotate(self.thymio, -5)
@@ -199,7 +201,7 @@ class ObstacleAvoidance:
                     return obstacle, global_path
 
                 sensor_values = self.sensor_handler.sensor_raw()["sensor"]
-                while sensor_values[0] < 1000:
+                while sensor_values[0] < 2000:
                     sensor_values = self.sensor_handler.sensor_raw()["sensor"]
                     print("cas 7.2")
                     self.rotate(self.thymio, 5)
@@ -266,8 +268,8 @@ class ObstacleAvoidance:
         if length_advance > 3:
             x_next_step_2 = int(x_discrete + 2 * dir_x)
             y_next_step_2 = int(y_discrete + 2 * dir_y)
-            approx_position_x_2 = [x_next_step - 1, x_next_step, x_next_step + 1]
-            approx_position_y_2 = [y_next_step - 1, y_next_step, y_next_step + 1]
+            approx_position_x_2 = [x_next_step_2 - 1, x_next_step_2, x_next_step_2 + 1]
+            approx_position_y_2 = [y_next_step_2 - 1, y_next_step_2, y_next_step_2 + 1]
 
         for k in range(len(self.full_path[0])):
             x_path = self.full_path[0][k]
@@ -349,11 +351,14 @@ class ObstacleAvoidance:
 
         move(thymio, left_dir, right_dir)
         # self.kalman_handler.start_recording()
-        time.sleep(distance_time)
-        stop(thymio)  #TODO remove if kalmann
-        self.kalman_position = self.kalman_handler.get_camera()
+        now = time.time()
+        while time.time() - now < distance_time:
+            self.kalman_position = self.kalman_handler.get_kalman(False)
+
+        # stop(thymio)  # TODO remove if kalmann
+        # self.kalman_position = self.kalman_handler.get_camera()
+        self.kalman_position = self.kalman_handler.get_kalman(True)
         self.kalman_position = [self.kalman_position[0] / 2.5, self.kalman_position[1] / 2.5, self.kalman_position[2]]
-        # self.kalman_position = self.kalman_handler.get_kalman(True)
         # self.kalman_handler.stop_recording()
 
     def rotate(self, thymio: Thymio, angle: float, verbose: bool = False):
@@ -374,9 +379,12 @@ class ObstacleAvoidance:
 
         move(thymio, left_dir / 2, right_dir / 2)
         # self.kalman_handler.start_recording()
-        time.sleep(turn_time * 2)
-        stop(thymio)  # TODO if kalmann
-        # self.kalman_position = self.kalman_handler.get_kalman(True)
-        self.kalman_position = self.kalman_handler.get_camera()
+        now = time.time()
+        while time.time() - now < turn_time * 2:
+            self.kalman_position = self.kalman_handler.get_kalman(False)
+
+        # stop(thymio)  # TODO if kalmann
+        self.kalman_position = self.kalman_handler.get_kalman(True)
+        # self.kalman_position = self.kalman_handler.get_camera()
         self.kalman_position = [self.kalman_position[0] / 2.5, self.kalman_position[1] / 2.5, self.kalman_position[2]]
         # self.kalman_handler.stop_recording()

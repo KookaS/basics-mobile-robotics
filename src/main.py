@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 from src.vision.camera import Camera
 from src.local_avoidance.obstacle import ObstacleAvoidance
 
-
 # Adding the src folder in the current directory as it contains the script with the Thymio class
 sys.path.insert(0, os.path.join(os.getcwd(), 'src'))
 load_dotenv()
@@ -53,6 +52,7 @@ def main():
     # VelocityTuning(th)    # velocity tuning
     # MotionTuning(thymio=th, distance=60, angle=180.0) # motion tuning
     EventHandler(th)  # all the different scenarios are handled
+
     print("END OF MAIN!")
 
 
