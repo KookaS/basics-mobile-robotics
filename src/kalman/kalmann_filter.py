@@ -191,16 +191,6 @@ class Kalman:
 
         # Estimated covariance of the state
         cov_est_a_priori = np.dot(Fx, np.dot(cov_est_prev, Fx.T)) + np.dot(Fu, np.dot(self.R, Fu.T))
-        """
-        print("z: ", z)
-        print("state_est_prev: ", state_est_prev)
-        print("cov_est_prev: ", cov_est_prev)
-        print("delta_sr: ", delta_sr)
-        print("delta_sl: ", delta_sl)
-        print("Fx", Fx)
-        print("Fu", Fu)
-        print("state_est_a_priori", state_est_a_priori)
-        """
 
         if measurement:  # odometry et measurements
             # Update step
@@ -213,12 +203,6 @@ class Kalman:
             # a posteriori estimate
             state_est = state_est_a_priori + np.dot(K, i)
             cov_est = cov_est_a_priori - np.dot(K, cov_est_a_priori)
-            """
-            print("i", i)
-            print(K)
-            print("state_est", state_est)
-            print("cov_est", cov_est)
-            """
 
         else:  # odometry
             state_est = state_est_a_priori
