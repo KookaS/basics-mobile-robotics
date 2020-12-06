@@ -1,13 +1,10 @@
-import cmath
 import os
-import threading
 import time
 
 import numpy as np
 import math
 
 import matplotlib.pyplot as plt
-from src.displacement.movement import stop
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 
@@ -232,10 +229,7 @@ class KalmanHandler:
         self.interval_sleep = interval_sleep
         self.thymio = thymio
         self.kalman = Kalman()
-        self.record_left = []
-        self.record_right = []
         self.sensor_handler = SensorHandler(self.thymio)
-        self.recording = False
         self.kalman_time = 0
         self.thymio_speed_to_mm_s = float(os.getenv("SPEED_80_TO_MM_S"))
         self.camera = camera
@@ -256,50 +250,12 @@ class KalmanHandler:
         r_speed = r_speed if r_speed <= 2 ** 15 else r_speed - 2 ** 16
         return l_speed, r_speed
 
-    def __record_handler(self):
-        """
-        Manages the speed recording of the robot to get the average speed in kalman.
-        """
-        l_speed, r_speed = self.__speeds()
-        self.record_left.append(l_speed)
-        self.record_right.append(r_speed)
-
-        if self.recording:
-            time.sleep(self.interval_sleep / 5)  # 5 recordings per kalman call
-            self.__record_handler()
-        else:
-            self.__record_reset()
-
-    def __record_reset(self):
-        """
-        Empty the arrays of the speeds it stops recording
-        """
-        self.record_right = []
-        self.record_left = []
-
     def __record_filter(self, threshold):
         """
         Filter the speeds of the robot by removing the elements below the threshold
         """
         self.record_right = filter(lambda number: number < threshold, self.record_right)
         self.record_left = filter(lambda number: number < threshold, self.record_left)
-
-    def start_recording(self):
-        """
-        Starts a parallel thread to record the speeds in the background.
-        """
-        self.kalman_time = time.time()
-        self.recording = True
-        print("START RECORDING")
-        threading.Thread(target=self.__record_handler).start()
-        time.sleep(self.interval_sleep)
-
-    def stop_recording(self):
-        """
-        Stops recording the speeds in the background.
-        """
-        print("STOP RECORDING")
-        self.recording = False
 
     def start_timer(self):
         """
@@ -315,29 +271,15 @@ class KalmanHandler:
 
         return: [x, y, theta] converted back in cm and degrees
         """
-
-        # if recording then does the average speed
-        if self.recording:
-            # if the speeds recorded are empty, stop the kalman
-            if not len(self.record_left) and not len(self.record_right):
-                return self.kalman_position
-
-            speed_left = sum(self.record_left) / len(self.record_left)
-            speed_right = sum(self.record_right) / len(self.record_right)
-        # if not recording, takes the actual speed
-        else:
-            speed_left, speed_right = self.__speeds()
+        speed_left, speed_right = self.__speeds()
 
         ts = time.time() - self.kalman_time  # [s]
         delta_sl = speed_left * ts * self.thymio_speed_to_mm_s / 1000  # [m]
         delta_sr = speed_right * ts * self.thymio_speed_to_mm_s / 1000  # [m]
 
         if measurement:
-            # stop(self.thymio)
             self.__camera_handler()
 
-        self.sensor_handler = SensorHandler(self.thymio)  # new class declaration to avoid calling too many times
-        self.__record_reset()
         self.start_timer()
 
         # cm & degrees -> m & rad
