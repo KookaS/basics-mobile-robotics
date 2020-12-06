@@ -67,7 +67,13 @@ class Kalman:
 
     def __jacobianf_x(self, theta, delta_s, delta_theta):
         """
-        TODO
+        Compute the partial derivative of the motion model with respect to the state vector x, evaluated at the current state x and input u 
+
+        :param theta: current orientation of the robot 
+        :param delta_s: mean of the travelled distance of the right wheel and the left wheel 
+        :param delta_theta: angle increment based on the travelled distance of the right wheel and the left wheel, and the distance between the wheels
+
+        :return: a matrix (np.array) containing the partial derivative evaluated at the current state and input u 
         """
         return np.array(
             [[1, 0, -delta_s * np.sin(theta + delta_theta / 2)], [0, 1, delta_s * np.cos(theta + delta_theta / 2)],
@@ -75,7 +81,13 @@ class Kalman:
 
     def __jacobianf_u(self, theta, delta_s, delta_theta):
         """
-        TODO
+        Compute the partial derivative of the motion model with respect to the input vector u, evaluated at the current state x and input u 
+
+        :param theta: current orientation of the robot 
+        :param delta_s: mean of the travelled distance of the right wheel and the left wheel 
+        :param delta_theta: angle increment based on the travelled distance of the right wheel and the left wheel, and the distance between the wheels
+
+        :return: a matrix (np.array) containing the partial derivative evaluated at the current state x and input u 
         """
         return np.array(
             [[1 / 2 * np.cos(theta + delta_theta / 2) - delta_s / (2 * self.b) * np.sin(theta + delta_theta / 2),
