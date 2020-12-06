@@ -152,8 +152,7 @@ class EventHandler:
         Local avoidance handler that updates the path after done avoiding.
         """
         print("inside __local_handler")
-        obstacle = ObstacleAvoidance(self.thymio, self.kalman_handler, self.full_path, self.final_occupancy_grid,
-                                     self.kalman_position)
+        obstacle = ObstacleAvoidance(self.thymio, self.kalman_handler, self.full_path, self.final_occupancy_grid)
         self.full_path = obstacle.full_path
         if not len(self.full_path[0]):
             self.full_path = np.array([[self.goal[0]], [self.goal[1]]])
