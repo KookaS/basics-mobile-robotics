@@ -136,7 +136,7 @@ class ObstacleAvoidance:
         while not global_path:
             obstacle, global_path = self.__cote_avoid(rotated)
             if obstacle and rotated == EventEnum.LEFT:  # the robot reached a global obstacle in 2D, it spins of 180
-                self.rotate(self.thymio, self.HALF_TURN)           # and try to avoid the obstacle from the other side
+                self.rotate(self.thymio, self.HALF_TURN)  # and try to avoid the obstacle from the other side
                 rotated = EventEnum.RIGHT  # change direction of avoidance
 
             elif obstacle and rotated == EventEnum.RIGHT:  # the robot reached a global obstacle in 2D, it spins of 180
@@ -217,7 +217,7 @@ class ObstacleAvoidance:
                 while sensor_values[0] < self.NO_OBSTACLE_SENSOR:
                     sensor_values = self.sensor_handler.sensor_raw()["sensor"]  # load sensors values
                     self.rotate(self.thymio, self.ANGLE_AVOIDANCE)
-                self.rotate(self.thymio, -self.ANGLE_ADJUSTMENT) # adjustments
+                self.rotate(self.thymio, -self.ANGLE_ADJUSTMENT)  # adjustments
                 break
         return obstacle, global_path
 
@@ -401,4 +401,3 @@ class ObstacleAvoidance:
         self.kalman_position = self.kalman_handler.get_kalman(True)
         self.kalman_position = [self.kalman_position[0] / self.SQUARE, self.kalman_position[1] / self.SQUARE,
                                 self.kalman_position[2]]
-
