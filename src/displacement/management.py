@@ -142,22 +142,23 @@ class EventHandler:
             self.camera.close_camera()
             stop(self.thymio)
             # self.kalman_handler.kalman.plot()
-            print("cov all!!!")
-            print(self.kalman_handler.kalman.cov_all.tolist())
-            print("pos all!!!")
-            print(self.kalman_handler.kalman.pos_all.tolist())
+            with open('cov_all.txt', 'w') as f:
+                for item in self.kalman_handler.kalman.cov_all:
+                    f.write("%s," % item)
+            f.close()
+            with open('pos_all.txt', 'w') as f:
+                for item in self.kalman_handler.kalman.pos_all:
+                    f.write("%s," % item)
+            f.close()
 
     def __local_handler(self):
         """
         Local avoidance handler that updates the path after done avoiding.
         """
-        print("inside __local_handler")
         obstacle = ObstacleAvoidance(self.thymio, self.kalman_handler, self.full_path, self.final_occupancy_grid)
         self.full_path = obstacle.full_path
-        if not len(self.full_path[0]):
-            self.full_path = np.array([[self.goal[0]], [self.goal[1]]])
-            print("added goal to the path!", self.full_path)
-        print("if goal delete", np.array([[self.goal[0]], [self.goal[1]]]))
-        print("End Local, new full_path", self.full_path)
-        self.path = full_path_to_points(self.full_path)  # concatenated path
         self.kalman_position = obstacle.kalman_position
+        if len(self.full_path[0]) < 2:
+            self.full_path = np.array([[self.goal[0]], [self.goal[1]]])
+            return
+        self.path = full_path_to_points(self.full_path)  # concatenated path

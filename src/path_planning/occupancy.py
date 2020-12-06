@@ -106,6 +106,12 @@ def path_to_command_thymio(path):
 
 
 def full_path_to_points(path):
+    """
+    Concatenates the path if there are multiple points on the same line.
+
+    :param path: numpy array of numpy arrays with points in x and y axis
+    :return:    concatenated numpy arrays
+    """
     points_x = [path[0][0]]
     points_y = [path[1][0]]
 
