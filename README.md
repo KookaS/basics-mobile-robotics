@@ -1,6 +1,6 @@
 # Basics mobile robotics
 
-EPFL 2020
+EPFL 2020 Project
 
 ## Members
 
@@ -11,11 +11,11 @@ EPFL 2020
 
 ## Movie
 
-![](./gif/_.gif)
+![](./gif/video.gif)
     
 ## Jupyter
 
-
+[<img align="left" alt="Jupyter" width="80px" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Jupyter_logo.svg/800px-Jupyter_logo.svg.png" />][jupyter]
     
 ## Libraries
 
@@ -46,5 +46,6 @@ This is a way to store locally variables that can be used in the project, variab
     DISTANCE_TIME=0.32
     CAMERA_PORT=1
     SPEED_80_TO_MM_S=0.3333
-  
-[gif]: url
+
+
+[jupyter]: https://github.com/KookaS/basics-mobile-robotics/tree/master/jupyter/repport_robotic_project.ipynb

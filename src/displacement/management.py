@@ -1,6 +1,4 @@
-import threading
 import time
-
 import numpy as np
 
 from src.displacement.movement import stop, rotate_time, move, advance_time
@@ -9,6 +7,7 @@ from src.kalman.kalmann_filter import KalmanHandler
 from src.local_avoidance.obstacle import ObstacleAvoidance
 from src.path_planning.localization import Localization
 from src.path_planning.occupancy import display_occupancy, full_path_to_points
+from src.plots.covariance import plot_cov
 from src.thymio.Thymio import Thymio
 from src.vision.camera import Camera
 
@@ -150,6 +149,8 @@ class EventHandler:
                 for item in self.kalman_handler.kalman.pos_all:
                     f.write("%s," % item)
             f.close()
+            # plot at the end the covariances
+            plot_cov(self.kalman_handler.kalman.pos_all, self.kalman_handler.kalman.cov_all)
 
     def __local_handler(self):
         """

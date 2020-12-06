@@ -93,67 +93,6 @@ class Kalman:
               1 / 2 * np.sin(theta + delta_theta / 2) - delta_s / (2 * self.b) * np.cos(theta + delta_theta / 2)],
              [1 / self.b, -1 / self.b]])
 
-    def plot(self):
-        state_pred = self.pos_all
-        cov_pred = self.cov_all
-
-        plt.ion()
-        fig, ax = plt.subplots()
-
-        px, py = self.plot_covariance_ellipse(state_pred[0], cov_pred[0] / 1000)
-        line_v = ax.axvline(x=state_pred[0][0], color="k")
-        line_h = ax.axhline(y=state_pred[0][1], color="k")
-        ellips, = ax.plot(px, py, "--r", label="covariance matrix")
-
-        max_l = len(state_pred)
-        l = [i for i in range(max_l)]
-        l.insert(0, -1)
-        for i in l:
-            px, py = self.plot_covariance_ellipse(state_pred[i], cov_pred[i] / 1000)
-
-            line_v.set_xdata(state_pred[i][0])
-            line_h.set_ydata(state_pred[i][1])
-
-            ellips.set_xdata(px)
-            ellips.set_ydata(py)
-            ax.relim()
-            ax.autoscale_view()
-
-            fig.canvas.draw()
-
-            fig.canvas.flush_events()
-            # plt.axis([0, 0.725, 0, 0.8])
-            plt.show()
-
-            time.sleep(4)
-
-    def plot_covariance_ellipse(self, state_est, cov_est):
-
-        Pxy = cov_est[0:2, 0:2]
-        eigval, eigvec = np.linalg.eig(Pxy)
-
-        if eigval[0] >= eigval[1]:
-            bigind = 0
-            smallind = 1
-        else:
-            bigind = 1
-            smallind = 0
-
-        t = np.arange(0, 2 * math.pi + 0.1, 0.1)
-        a = math.sqrt(eigval[bigind])
-        b = math.sqrt(eigval[smallind])
-        x = [a * math.cos(it) for it in t]
-        y = [b * math.sin(it) for it in t]
-
-        angle = math.atan2(eigvec[bigind, 1], eigvec[bigind, 0])
-        R = np.array([[math.cos(angle), math.sin(angle)],
-                      [-math.sin(angle), math.cos(angle)]])
-        fx = R.dot(np.array([[x, y]]))
-        px = np.array(fx[0, :] + state_est[0, 0]).flatten()
-        py = np.array(fx[1, :] + state_est[1, 0]).flatten()
-
-        return px, py
-
     def kalman_filter(self, z, state_est_prev, cov_est_prev, delta_sr, delta_sl, measurement):
         """
         Estimates the current state using input sensor data and the previous state
