@@ -131,6 +131,18 @@ This is a way to store locally variables that can be used in the project, variab
     DISTANCE_TIME=0.32
     CAMERA_PORT=1
     SPEED_80_TO_MM_S=0.3333
+
+from terminal:
+
+    cat <<'EOF' > .env
+    COM_PORT=\\.\COM10 \
+    LEFT_WHEEL_SCALING=98 \
+    RIGHT_WHEEL_SCALING=100 \
+    HALF_TURN_TIME=4.72 \
+    DISTANCE_TIME=0.32 \
+    CAMERA_PORT=1 \
+    SPEED_80_TO_MM_S=0.3333 \
+    EOF
         
 ## documentation
 
