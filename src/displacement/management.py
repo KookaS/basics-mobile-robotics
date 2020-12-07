@@ -27,16 +27,13 @@ class EventHandler:
         """
         Constructor of the class EventHandler.
 
-        param thymio: class thymio, reference to the robot
-        param interval_camera: time constant necessary to access to kalman odometry and measurement
-        param interval_odometry: time constant necessary to access to kalman odometry
-        param interval_sleep: time sleep constant before function loop calls
-        param obstacle_threshold: condition to go into local avoidance
-        param epsilion_theta: the tolerated angle deviation
-        param epsilon_r: the tolerated distance deviation
-
-
-        :return:
+        :param thymio: class thymio, reference to the robot
+        :param interval_camera: time constant necessary to access to kalman odometry and measurement
+        :param interval_odometry: time constant necessary to access to kalman odometry
+        :param interval_sleep: time sleep constant before function loop calls
+        :param obstacle_threshold: condition to go into local avoidance
+        :param epsilon_theta: the tolerated angle deviation
+        :param epsilon_r: the tolerated distance deviation
         """
         self.thymio: Thymio = thymio
         self.interval_camera = interval_camera
@@ -65,23 +62,16 @@ class EventHandler:
         """
         Function called in loop until the goal is reached. Kalman, global displacement, local avoidance happens here.
         """
-        """
-        """
         # odometry and measurement kalman
         if time.time() - self.camera_timer >= self.interval_camera:
-            # self.kalman_position = self.kalman_handler.get_camera()
             print("before kalman position", self.kalman_position)
             self.kalman_position = self.kalman_handler.get_kalman(True)
             print("after kalman position", self.kalman_position)
-            # self.kalman_handler.stop_recording()
-            # self.kalman_handler = KalmanHandler(self.thymio, self.camera)
-            # self.kalman_handler.start_recording()
             self.camera_timer = time.time()
             self.odometry_timer = time.time()
 
         # odometry kalman
         if time.time() - self.odometry_timer >= self.interval_odometry:
-            # self.kalman_position = self.kalman_handler.get_camera()
             self.kalman_position = self.kalman_handler.get_kalman(False)
             self.odometry_timer = time.time()
 
@@ -89,8 +79,6 @@ class EventHandler:
         delta_r, delta_theta = update_path(self.path, self.kalman_position[0], self.kalman_position[1],
                                            self.kalman_position[2],
                                            self.case_size_cm)
-        # print("delta_r, delta_theta", delta_r, delta_theta)
-        # TODO add scaling to slow down when close to goal
 
         # Apply rotation
         if abs(delta_theta) > self.epsilon_theta:
@@ -108,7 +96,6 @@ class EventHandler:
 
         # Apply displacement
         elif abs(delta_r) > self.epsilon_r:
-            # print("done rotating")
             left_dir, right_dir, distance_time = advance_time(delta_r)
             left_dir = left_dir * 0.5
             right_dir = right_dir * 0.5
@@ -118,14 +105,10 @@ class EventHandler:
             sensor_values = self.kalman_handler.sensor_handler.sensor_raw()
             if np.amax(sensor_values["sensor"][0:4]).astype(int) >= self.obstacle_threshold:
                 stop(self.thymio)
-                # self.kalman_handler.stop_recording()
                 self.__local_handler()
-                # self.kalman_handler.start_recording()
                 self.camera_timer = time.time()
                 self.odometry_timer = time.time()
         else:
-            # point in the path has been reached
-            # self.state = STOP
             stop(self.thymio)
             print("REMOVE POINTS", self.path[0][0], self.path[1][0])
             self.path = np.delete(self.path, 0, 1)  # removes the step done from the non-concatenated lists
@@ -137,10 +120,8 @@ class EventHandler:
 
         # no more path, go back to main
         else:
-            # self.kalman_handler.stop_recording()
             self.camera.close_camera()
             stop(self.thymio)
-            # self.kalman_handler.kalman.plot()
             with open('cov_all.txt', 'w') as f:
                 for item in self.kalman_handler.kalman.cov_all:
                     f.write("%s," % item)

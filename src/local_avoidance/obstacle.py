@@ -1,7 +1,6 @@
 import time
 from enum import Enum
 import numpy as np
-from src.kalman.kalmann_filter import KalmanHandler
 from src.sensors.state import SensorHandler
 from src.thymio.Thymio import Thymio
 from src.displacement.movement import stop, advance_time, move, rotate_time
@@ -25,16 +24,16 @@ class ObstacleAvoidance:
         """
         Constructor to initialize the sensors, camera, kalman and class variables.
 
-        param thymio: class thymio, reference to the robot
-        param kalman_handler: class KalmanHandler that wraps the code of the Kalman for the right execution. It includes
+        :param thymio: class thymio, reference to the robot
+        :param kalman_handler: class KalmanHandler that wraps the code of the Kalman for the right execution. It includes
                               the use of the sensors and the camera.
-        param full_path: list of all intermediary points to reach the goal
-        param final_occupancy_grid: map grid with obstacle size increase
-        param distance_avoidance: constant steps to move forward
-        param angle_avoidance: angle steps to rotate
-        param square: unit square size of the grid map
-        param wall_threshold: constant min threshold to detect a wall or not
-        param clear_thresh: constant max threshold to detect a wall or not
+        :param full_path: list of all intermediary points to reach the goal
+        :param final_occupancy_grid: map grid with obstacle size increase
+        :param distance_avoidance: constant steps to move forward
+        :param angle_avoidance: angle steps to rotate
+        :param square: unit square size of the grid map
+        :param wall_threshold: constant min threshold to detect a wall or not
+        :param clear_thresh: constant max threshold to detect a wall or not
         """
         # params
         self.final_occupancy_grid = final_occupancy_grid
@@ -147,7 +146,10 @@ class ObstacleAvoidance:
         """
         follow the wall of the obstacle until it does not detect it anymore
 
-        param rotated: direction of avoidance
+        :param rotated: direction of avoidance
+
+        :return: A boolean to know if there is an obstacle or map limit and
+                 a boolean to know if the A* path was crossed
         """
 
         condition = True
@@ -225,7 +227,10 @@ class ObstacleAvoidance:
         """
         Check if there is an obstacle or a map limit or if it crossed the end of the path
 
-        param length_advance: distance of advancement to check
+        :param length_advance: distance of advancement to check
+
+        :return: A boolean to know if there is an obstacle or map limit and
+                 a boolean to know if the A* path was crossed
         """
 
         # initialisation variable

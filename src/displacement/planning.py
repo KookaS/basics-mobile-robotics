@@ -5,11 +5,13 @@ def update_path(path, x, y, theta, case_size):
     """
     Do a sequence of  displacement corresponding to the entire global path planning.
 
-    param x: x position robot in cm
-    param y: y position robot in cm
-    param theta: angle robot in degrees
+    :param case_size: cm of the size of a case
+    :param path: list with list of points to reach for x and y
+    :param x: x position robot in cm
+    :param y: y position robot in cm
+    :param theta: angle robot in degrees
 
-    return: distance and rotation, needed to go to next step, in cm and degrees
+    :return: distance and rotation, needed to go to next step, in cm and degrees
     """
     if len(path[0]) and len(path[1]):
         target_x = path[0][0] * case_size

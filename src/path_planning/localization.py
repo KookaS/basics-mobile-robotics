@@ -1,14 +1,13 @@
-import os
-
 from src.path_planning.occupancy import display_map
-from src.thymio.Thymio import Thymio
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from src.vision.camera import Colors, Camera
 
+#  Grid dimensions in square units
 LENGTH = 32
 WIDTH = 29
+
 
 def resize(final_grid, alpha, beta):
     """
@@ -16,10 +15,12 @@ def resize(final_grid, alpha, beta):
     :param final_grid:      The picture to resize
     :param alpha:           Sharpen's contrast control to resize the grid
     :param beta:            Sharpen's brightness control to resize the grid
+
+    :return:                The resized map in a grid
     """
 
     # init the filter before actual resize
-    adjusted = cv2.convertScaleAbs(final_grid, alpha, beta)
+    # adjusted = cv2.convertScaleAbs(final_grid, alpha, beta)
     sharpen_kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
     sharpen = cv2.filter2D(final_grid, -1, sharpen_kernel)
 
@@ -49,9 +50,6 @@ class Localization:
         self.FREE = 0
         self.OCCUPIED = 1
 
-        #####################################
-        # dans prog tif passer de 45 a 44 et 42 a 41?
-        #####################################
         # shapren parameter
         self.alpha = 1.5  # Contrast control (1.0-3.0)
         self.beta = 0  # Brightness control (0-100)
@@ -59,7 +57,10 @@ class Localization:
     def rotate(self, vis_map):
         """
         Rotate the map in order to put it in the right orientation
+
         :param vis_map:     picture to rotate
+
+        :return:            The rotated world grid
         """
 
         # computing of the green mask to find the correct orientation of the map
@@ -88,7 +89,10 @@ class Localization:
     def detect_object(self, world):
         """
         Fonction to detect the global obstacles and the goal
+
         :param world:       global map of the world from the camera after resize and rotation
+
+        :return:            The goal coordinate and the obstacle grid
         """
 
         # create the mask to see the obstacle
@@ -120,7 +124,10 @@ class Localization:
     def vision(self, image):
         """
         Main function handling the pictures capture and preparation before analysis
+
         :param image:       Picture took with the webcam
+
+        :return:            The goal coordinate, the obstacle grid and the full image grid
         """
 
         final_grid = Camera().detect_and_rotate(image)
@@ -173,6 +180,8 @@ class Localization:
     def localize(self):
         """
         Main function handling the image analysis and thymio localisation with the camer
+
+        :return:        The grid containing the obstacles and the thymio coordinate
         """
         # open the video and saves the first image
         _, image = self.camera.cap.read()
