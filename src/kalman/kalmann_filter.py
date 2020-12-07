@@ -2,7 +2,6 @@ import os
 import time
 
 import numpy as np
-import math
 
 import matplotlib.pyplot as plt
 from src.sensors.state import SensorHandler

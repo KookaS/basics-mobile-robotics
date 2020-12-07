@@ -52,7 +52,7 @@ def A_Star(start, goal, final_occupancy_grid):
     h is the heuristic function. h(n) estimates the cost to reach goal from node n.
     :param start: start node (x, y)
     :param goal: goal node (x, y)
-    :param occupancy_grid: the grid map
+    :param final_occupancy_grid: the grid map
     :return: a tuple that contains: (the resulting path in meters, the resulting path in data array indices)
     """
     x, y = np.mgrid[0:LENGTH:1, 0:WIDTH:1]

@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
 from src.path_planning.a_star import A_Star
-import time
+
 # constants
 LENGTH = 29
 WIDTH = 32
@@ -58,15 +58,21 @@ def display_map(grid, type_map):
 
 
 def display_global_path(start, goal, path, occupancy_grid):
+    """
+    Display the global A* path
+
+    :param start:           Start aka thymio coordinate in the grid coordinate
+    :param goal:            Goal coordinate in the grid coordinate
+    :param path:            A* path that we'll follow
+    :param occupancy_grid:  Grid with the increased obstacle
+    """
     # Displaying the map
     fig_astar, ax_astar = display_map(occupancy_grid, OCCUPANCY)
-    # ax_astar.imshow(occupancy_grid.transpose(), cmap=cmap)
 
     # Plot the best path found and the list of visited nodes
     ax_astar.plot(path[0], path[1], marker="o", color='blue')
     ax_astar.scatter(start[0], start[1], marker="o", color='green', s=200)
     ax_astar.scatter(goal[0], goal[1], marker="o", color='purple', s=200)
-    # ax_astar.set_ylim(ax_astar.get_ylim()[::-1])
 
     ax_astar.set_ylabel('x axis')
     ax_astar.set_xlabel('y axis')
@@ -75,6 +81,11 @@ def display_global_path(start, goal, path, occupancy_grid):
 
 
 def path_to_command_thymio(path):
+    """
+    Find the corners of the path
+    :param path: a list containing, a list of the x coordinates and a list of the y coordinates of the path
+    :return:a list containing, a list of the x coordinates and a list of the y coordinates of the corners of the path
+    """
     RIGHT = 0
     LEFT = 1
     STRAIGHT = 2
@@ -107,10 +118,9 @@ def path_to_command_thymio(path):
 
 def full_path_to_points(path):
     """
-    Concatenates the path if there are multiple points on the same line.
-
-    :param path: numpy array of numpy arrays with points in x and y axis
-    :return:    concatenated numpy arrays
+    Find the corners of the path
+    :param path: a list containing, a list of the x coordinates and a list of the y coordinates of the path
+    :return:a list containing, a list of the x coordinates and a list of the y coordinates of the corners of the path
     """
     points_x = [path[0][0]]
     points_y = [path[1][0]]
@@ -136,6 +146,17 @@ def full_path_to_points(path):
 
 
 def display_occupancy(final_occupancy_grid, position, goal):
+    """
+    Compute the A* algorithm and display the global path
+
+    :param final_occupancy_grid:    Grid containing the increased obstacle coordinate
+    :param position:                Thymio position in the grid coordinate
+    :param goal:                    Goal position in the grid coordinate
+
+    :return:                        A list of list of coordinate x and y containing
+                                    the full path with all points and the path containing
+                                    only the corner
+    """
     # Run the A* algorithm
     x = round(position[0] / 2.5) - 1
     y = round(position[1] / 2.5) - 1
@@ -147,8 +168,6 @@ def display_occupancy(final_occupancy_grid, position, goal):
     new_path = full_path_to_points(path)  # concatenated path
     display_global_path(new_pos, goal, new_path, final_occupancy_grid.transpose())
     full_path = np.delete(path, 0, 1)
-    # full_path.tolist()
     new_path = np.delete(new_path, 0, 1)
-    # new_path.tolist()
     print("path", new_path)
     return new_path, full_path

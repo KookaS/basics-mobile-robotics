@@ -53,10 +53,10 @@ def rotate_time(angle: float, speed_ratio=1):
     """
     Computes the speed ratios and turn time for a certain angle.
 
-    param angle: angle in degrees
-    param speed_ratio: ratio to scale the speed
+    :param angle: angle in degrees
+    :param speed_ratio: ratio to scale the speed
 
-    return: speed norms for left and right wheel, time constant for turning at 100 speed
+    :return: speed norms for left and right wheel, time constant for turning at 100 speed
     """
 
     left_dir = -speed_ratio * int(np.sign(angle))
@@ -69,10 +69,10 @@ def advance_time(distance: float, speed_ratio=1):
     """
     Computes the speed ratios and time for a certain distance.
 
-    param distance: distance in centimeter
-    param speed_ratio: ratio to scale the speed
+    :param distance: distance in centimeter
+    :param speed_ratio: ratio to scale the speed
 
-    return: speed norms for left and right wheel, time constant for advancing at 100 speed
+    :return: speed norms for left and right wheel, time constant for advancing at 100 speed
     """
     left_dir = speed_ratio * int(np.sign(distance))
     right_dir = speed_ratio * int(np.sign(distance))

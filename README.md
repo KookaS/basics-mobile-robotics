@@ -17,6 +17,8 @@ EPFL 2020 Project
 
 [<img align="left" alt="Jupyter" width="80px" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Jupyter_logo.svg/800px-Jupyter_logo.svg.png" />][jupyter]
     
+<br /><br /><br /><br />
+
 ## Libraries
 
 Anaconda is useful for setting up python, you have to set as interpreter for the project
@@ -48,4 +50,4 @@ This is a way to store locally variables that can be used in the project, variab
     SPEED_80_TO_MM_S=0.3333
 
 
-[jupyter]: https://github.com/KookaS/basics-mobile-robotics/tree/master/jupyter/repport_robotic_project.ipynb
+[jupyter]: https://github.com/KookaS/basics-mobile-robotics/tree/master/jupyter/Robotics_final_notebook.ipynb
